@@ -2,6 +2,7 @@
 # first argument is the input directory name 
 # second argument is the output directory name 
 # adding a comment 
+# comment from git
 with open("Screenshot from 2020-11-28 15-55-25.png", "rb") as image:
     f1 = image.read()
     b1 = bytearray(f1)
