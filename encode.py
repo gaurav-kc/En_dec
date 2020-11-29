@@ -1,26 +1,34 @@
 # find this project at https://github.com/gaurav-kc/Enc_dec
 
+# First argument is mandatory. Rest 3 are are optional. But order is important 
 # first argument is the input directory name. It should have all the
-# images you wish to encrypt. For now chunk size will be 200MB
-
-# second argument is the output directory name. It will have the chunks 
+# files you wish to encrypt.
+# second argument is the output directory name. It will have the chunks
+# third argument is the chunksize. 
+# fourth argument is key (0-255) only 
 
 import sys
 import os
+import json
 
 directory_name = "testit" #1st argument
 op_directory_name = "encrypted" #2nd argument
-key = 56 #3rd argument 
-chunksize = 10000 #4th argument
+chunksize = 10000 #3rd argument
+key = 56 #4th argument 
+commonname = "bpsnecjkx"
+delimeter = "_"
+opformat = "gty"
+allowed_formats = ["jpg","png","jpeg"]
+endian = 'little'
 
 if len(sys.argv) >= 2:
     directory_name = sys.argv[1]
 if len(sys.argv) >= 3:
     op_directory_name = sys.argv[2]
 if len(sys.argv) >= 4:
-    key = int(sys.argv[3])
+    chunksize = int(sys.argv[3])
 if len(sys.argv) >= 5:
-    chunksize = int(sys.argv[4])
+    key = int(sys.argv[4])
 
 
 def encrpyt_byte(by,key):
@@ -36,10 +44,10 @@ if not isdirectory:
     exit(-1)
 
 #check all files and formats
-allowed_formats = ["jpg","png","jpeg"]
 
 tfile_names = os.listdir(rel_pathname)
 file_names = []
+filenames_enc = str()
 #analyze these names of files in directory
 for tfile in tfile_names:
     temp = tfile.split(".")
@@ -54,15 +62,17 @@ for tfile in tfile_names:
         print("Excluding file ",tfile)
         continue
     file_names.append(tfile)
-    
+    filenames_enc = filenames_enc + tfile + ";"
+
+filenames_enc = bytearray(filenames_enc,'utf-8')
+
 files_count = len(file_names)
 if files_count == 0:
     print("Nothing to encrpyt")
     exit(0)
 
 finalres = bytearray()
-little = 'little'
-files_count = files_count.to_bytes(4, little)   #conv to bytearray
+files_count = files_count.to_bytes(4, endian)   #conv to bytearray
 finalres = finalres + files_count #first 4 bytes for file count 
 
 #now for each file we append byte_count followed by encrypted bytes
@@ -76,9 +86,12 @@ for tfile in file_names:
         for i in range(0,len(b)):
             b[i] = encrpyt_byte(b[i],key)
         #append the data
-        size = size.to_bytes(4,little)
+        size = size.to_bytes(4,endian)  #if file size goes beyound 4GB handle here
         finalres = finalres + size + b
-
+#we convert the list and append at the end to restore the 
+#original names 
+finalres = finalres + filenames_enc
+print("finalres is ",len(finalres))
 #now we have all bytes in finalres variable.
 #we need to chunk it
 #a warning as wrong chunk size can create millions of chunks
@@ -103,12 +116,10 @@ while i < len(finalres):
 #give crazy file names 
 output_direc = "./" + op_directory_name
 os.mkdir(output_direc)
-delimeter = "_"
-opformat = "gty"
 for i in range(0,len(chunk_array)):
     #i will be the chunk number
-    chunkname = "bpsnecjkx" + delimeter + str(i) + "." + opformat
+    chunkname = commonname + delimeter + str(i) + "." + opformat
     chunkname = os.path.join(output_direc,chunkname)
     f = open(chunkname,"wb")
     f.write(chunk_array[i])
-        
+    f.close()   
