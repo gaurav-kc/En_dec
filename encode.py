@@ -1,4 +1,4 @@
-# find recent code at https://github.com/gaurav-kc/Enc_dec
+# find this project at https://github.com/gaurav-kc/Enc_dec
 
 # first argument is the input directory name. It should have all the
 # images you wish to encrypt. For now chunk size will be 200MB
@@ -8,14 +8,21 @@
 import sys
 import os
 
-# if len(sys.argv) != 3:
-#     print("Arguments not correct. Expecting 1 arg")
-#     exit(-1)
-
 directory_name = "testit" #1st argument
 op_directory_name = "encrypted" #2nd argument
-key = 56 #can be taken as argument
-chunksize = 10000 #can be taken as argument 
+key = 56 #3rd argument 
+chunksize = 10000 #4th argument
+
+if len(sys.argv) >= 2:
+    directory_name = sys.argv[1]
+if len(sys.argv) >= 3:
+    op_directory_name = sys.argv[2]
+if len(sys.argv) >= 4:
+    key = int(sys.argv[3])
+if len(sys.argv) >= 5:
+    chunksize = int(sys.argv[4])
+
+
 def encrpyt_byte(by,key):
     #implement encryption logic here
     by = (by + key)%256
@@ -33,19 +40,20 @@ allowed_formats = ["jpg","png","jpeg"]
 
 tfile_names = os.listdir(rel_pathname)
 file_names = []
-#analyze these names 
+#analyze these names of files in directory
 for tfile in tfile_names:
     temp = tfile.split(".")
+    #only one dot is allowed in filename
     if len(temp) != 2:
         print("Incorrect format ",tfile)
         continue
     filename = temp[0]
     format = temp[1]
+    #check if file has format in our list
     if format not in allowed_formats:
         print("Excluding file ",tfile)
         continue
     file_names.append(tfile)
-print(file_names)
     
 files_count = len(file_names)
 if files_count == 0:
@@ -73,6 +81,12 @@ for tfile in file_names:
 
 #now we have all bytes in finalres variable.
 #we need to chunk it
+#a warning as wrong chunk size can create millions of chunks
+chunkcount = int(len(finalres)/chunksize) + 1 
+print(chunkcount, " chunks will form. Are you sure you want to continue? y/n")
+choice = input()
+if choice != "y":
+    exit(0)
 
 chunk_array = []
 i = 0

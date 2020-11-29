@@ -1,3 +1,7 @@
+# find this project at https://github.com/gaurav-kc/Enc_dec
+
+# only 1 argument. The name of directory which has encrypted files
+
 with open("temp.lol", "rb") as image:
     f = image.read()
     b = bytearray(f)
