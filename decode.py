@@ -1,10 +1,21 @@
 # find this project at https://github.com/gaurav-kc/Enc_dec
 
-# first argument is the input directory name. It should have all the chunks 
-# (it is okay if it has other files. The program reads only recognized format files)
-# second argument is the output directory name. It will have the files
-# third argument is the chunksize. If you mentioned it while encrypting
-# fourth argument is key (0-255) only . If mentioned while encrypting
+# This is a program to decrypt and recover all the files 
+# The program reads the encrypted files and generates original files
+# format of the entire (unchunked) is like this 
+# <file_count,4B> <file_1_size,4B><file_1_bytes> <file_2_size,4B><file_2_bytes> ... <file_n_size,4B><file_n_bytes> <encoded string of semi-colon sepereated original filenames>
+# After the successful execution, a folder will contain all recovered files
+# feel free to add any further improvements 
+
+# scope for improvements 
+# TODO header contain chunksize and key 
+# TODO modularize the code. Write in functions
+# TODO allocate 8 Bytes instead of 4. 4 bytes puts limitation on file size (4GB) and on filecount (4*10^9)
+# TODO flagged arguments (so that args dont have to be in order)
+# TODO improve parent directory handling. Explicitly mentioning "./" is never good
+# TODO add chunks directly to google drive 
+# TODO think upon compression algorithmns for different formats. 
+# TODO have an option for more robust process (say by including some metadata or recovery mechanisms)
 
 import sys
 import os
@@ -32,7 +43,8 @@ if len(sys.argv) >= 5:
 
 
 def decrpyt_byte(by,key):
-    #implement encryption logic here
+    #implement decryption logic here
+    #note that this is byte level decryption
     by = (by + key)%256
     return by
 
