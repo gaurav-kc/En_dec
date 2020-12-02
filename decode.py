@@ -31,26 +31,72 @@ delimeter = "_"
 opformat = "gty"
 # allowed_formats = ["jpg","png","jpeg"] # of no use here
 endian = 'little'
+current_dir = "./"
 
-if len(sys.argv) >= 2:
-    directory_name = sys.argv[1]
-if len(sys.argv) >= 3:
-    op_directory_name = sys.argv[2]
-if len(sys.argv) >= 4:
-    chunksize = int(sys.argv[3])
-if len(sys.argv) >= 5:
-    key = int(sys.argv[4])
+# flags 
+is_input_directory = False
+is_output_directory = False
+is_chunk_size = False
+is_key = False
+
+#handling the flags to set/overwrite default values
+i = 1
+while i < len(sys.argv):
+    if sys.argv[i][0] == "-":
+        flag = sys.argv[i].lstrip("-")
+        # if flag is cs (chunksize)
+        if flag == "cs":
+            is_chunk_size = True    
+            i = i + 1
+            try:
+                chunksize = int(sys.argv[i])
+            except ValueError as e:
+                print("Chunk size should be an integer")
+                exit(0)
+            except IndexError as ie:
+                print("No chunk size given")
+                exit(0)
+        # if flag is k (key)
+        elif flag == "k":
+            is_key = True
+            i = i + 1
+            try:
+                key = int(sys.argv[i])
+            except ValueError as e:
+                print("Key should be an integer")
+                exit(0)
+            except IndexError as ie:
+                print("No key given")
+                exit(0)
+            if key<0 or key>256:
+                print("Key has to be between 0 to 256")
+        # add new flags here 
+
+        else:
+            print("Invalid flag ",flag)
+            exit(0)
+    else:
+        if is_input_directory == False:
+            is_input_directory = True
+            directory_name = sys.argv[i]
+        elif is_output_directory == False:
+            is_output_directory = True
+            op_directory_name = sys.argv[i]
+        else:
+            print("Error in this argument",sys.argv[i])
+            exit(0)
+    i = i + 1
 
 
-def decrpyt_byte(by,key):
+def decrpyt_bytes(b,key):
     #implement decryption logic here
-    #note that this is byte level decryption
-    by = (by + key)%256
-    return by
+    for i in range(0,len(b)):
+        b[i] = (b[i] + key)%256
+    return b
 
 # construct the entire bytearray (combined of all chunks)
 # check if given directory exists
-dir_path = "./" + directory_name + "/"
+dir_path = os.path.join(current_dir,directory_name)
 if not os.path.exists(dir_path):
     print("Directory not found")
     exit(0)
@@ -74,7 +120,8 @@ if filecount == 0:
 finalres = bytearray()
 for i in range(0,filecount):
     # i here is chunk number
-    filename = dir_path + commonname + delimeter + str(i) + "." + opformat
+    filename = commonname + delimeter + str(i) + "." + opformat
+    filename = os.path.join(dir_path,filename)
     if not os.path.exists(filename):
         print(filename, " not found")
         exit(0) # bilkul ricks nai lene ka
@@ -91,10 +138,20 @@ index = 0   # this index will be our pointer to finalres.
 # in case any data is read through finalres, never ever forget to inc index 
 
 opfilecount = bytearray()   # this will have number of files that will be created
-for i in range(0,4):    # in our case, first 4 bytes will be interpreted as integer and stores how many files are there
+for i in range(0,8):    # in our case, first 8 bytes will be interpreted as integer and stores how many files are there
     opfilecount.append(finalres[index])
     index = index + 1
 opfilecount = int.from_bytes(opfilecount, byteorder=endian)
+chunk_bytes = bytearray()
+for i in range(0,4):
+    chunk_bytes.append(finalres[index])
+    index = index + 1
+chunksize = int.from_bytes(chunk_bytes, byteorder=endian)
+key_bytes = bytearray()
+for i in range(0,4):
+    key_bytes.append(finalres[index])
+    index = index + 1
+key = int.from_bytes(key_bytes, byteorder=endian)
 print(opfilecount)  # debug only
 
 # now we know files count 
@@ -103,14 +160,15 @@ print(opfilecount)  # debug only
 bytes_list = []
 for i in range(opfilecount):
     filesize = bytearray()
-    for j in range(0,4):    # 4 bytes to store bytes count 
+    for j in range(0,8):    # 4 bytes to store bytes count 
         filesize.append(finalres[index])
         index = index + 1
     filesize = int.from_bytes(filesize, byteorder=endian)
     temp = bytearray()
     for j in range(0,filesize):
-        temp.append(decrpyt_byte(finalres[index],key))
+        temp.append(finalres[index])
         index = index + 1
+    temp = decrpyt_bytes(temp,key)
     bytes_list.append(temp) # read filesize bytes into seperate bytearray and add it to the list
 
 # after storing all bytes, we had encoded and appended semi-colon seperated list of original filenames
@@ -128,12 +186,12 @@ print(actual_names) #debug only
 # In encrypted format, the order of bytes and filenames was same
 
 # check if output directory exists
-opdir_path = "./" + op_directory_name + "/"
+opdir_path = os.path.join(current_dir,op_directory_name)
 if not os.path.exists(opdir_path):
     os.mkdir(opdir_path)
 
 for i in range(0,opfilecount):
-    rec_filename = opdir_path + actual_names[i]
+    rec_filename = os.path.join(opdir_path,actual_names[i])
     # check if file exists 
     if os.path.exists(rec_filename):
         print("The file ",actual_names[i], " already exists. Overwrite it? y/n")

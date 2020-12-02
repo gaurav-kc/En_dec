@@ -31,6 +31,7 @@ delimeter = "_"
 opformat = "gty"
 allowed_formats = ["jpg","png","jpeg"]
 endian = 'little'
+current_dir = "./"
 
 # flags 
 is_input_directory = False
@@ -38,12 +39,14 @@ is_output_directory = False
 is_chunk_size = False
 is_key = False
 
+#handling the flags to set/overwrite default values
 i = 1
 while i < len(sys.argv):
     if sys.argv[i][0] == "-":
         flag = sys.argv[i].lstrip("-")
+        # if flag is cs (chunksize)
         if flag == "cs":
-            is_chunk_size = True
+            is_chunk_size = True    
             i = i + 1
             try:
                 chunksize = int(sys.argv[i])
@@ -53,7 +56,7 @@ while i < len(sys.argv):
             except IndexError as ie:
                 print("No chunk size given")
                 exit(0)
-        
+        # if flag is k (key)
         elif flag == "k":
             is_key = True
             i = i + 1
@@ -67,11 +70,11 @@ while i < len(sys.argv):
                 exit(0)
             if key<0 or key>256:
                 print("Key has to be between 0 to 256")
+        # add new flags here 
 
         else:
             print("Invalid flag ",flag)
             exit(0)
-        
     else:
         if is_input_directory == False:
             is_input_directory = True
@@ -85,13 +88,13 @@ while i < len(sys.argv):
     i = i + 1
 
 
-def encrpyt_byte(by,key):
+def encrpyt_bytes(b,key):
     #implement encryption logic here
-    #note that this is byte level encryption
-    by = (by + key)%256
-    return by
+    for i in range(0,len(b)):
+        b[i] = (b[i] + key)%256
+    return b
 
-rel_pathname = "./" + directory_name + "/"
+rel_pathname = os.path.join(current_dir,directory_name)
 #check input directory name is correct or not 
 isdirectory = os.path.isdir(rel_pathname)
 if not isdirectory:
@@ -108,6 +111,11 @@ for tfile in tfile_names:
     #only one dot is allowed in filename
     if len(temp) != 2:
         print("Incorrect format ",tfile, " skipping it.")
+        continue
+    #check for delimeter
+    temp1 = tfile.split(";")
+    if len(temp1) != 1:
+        print("; found in ",tfile," which is not allowed")
         continue
     filename = temp[0]
     format = temp[1]
@@ -128,21 +136,23 @@ if files_count == 0:
     exit(0)
 
 finalres = bytearray()  # this will have the entire bytearray
-files_count = files_count.to_bytes(4, endian)   #conv to bytearray
-finalres = finalres + files_count #first 4 bytes for file count 
+files_count = files_count.to_bytes(8, endian)   #conv to bytearray
+cs_bytes = chunksize.to_bytes(4,endian)
+dec_key = 156
+key_bytes = dec_key.to_bytes(4,endian)
+finalres = finalres + files_count + cs_bytes + key_bytes
 
 #now for each file we append byte_count followed by encrypted bytes
 for tfile in file_names:
-    filepath = "./" + directory_name + "/" + tfile
+    filepath = os.path.join(current_dir,directory_name,tfile)
     with open(filepath,"rb") as temp_file:
         f = temp_file.read()
         b = bytearray(f)
         size = int(len(b))
         #encrypt the bytes 
-        for i in range(0,len(b)):
-            b[i] = encrpyt_byte(b[i],key)
+        b = encrpyt_bytes(b,key)
         #append the data
-        size = size.to_bytes(4,endian)  #if file size goes beyound 4GB handle here
+        size = size.to_bytes(8,endian)  #if file size goes beyound 4GB handle here
         finalres = finalres + size + b  #append byte count and that many bytes
 
 # we convert the list and append at the end to restore the original names 
@@ -171,7 +181,7 @@ while i < len(finalres):
 
 #now we have byte chunks
 
-output_direc = "./" + op_directory_name
+output_direc = os.path.join(current_dir,op_directory_name)
 # check if directory exists
 if not os.path.exists(output_direc):
     os.mkdir(output_direc)
