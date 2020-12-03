@@ -20,6 +20,7 @@
 import sys
 import os
 import json
+import hashlib
 
 # default values
 directory_name = "encrypted" #1st argument
@@ -32,6 +33,7 @@ opformat = "gty"
 # allowed_formats = ["jpg","png","jpeg"] # of no use here
 endian = 'little'
 current_dir = "./"
+default_password = "pmqhfisbrkjcvklzxckliou"
 
 # flags 
 is_input_directory = False
@@ -152,6 +154,32 @@ for i in range(0,4):
     key_bytes.append(finalres[index])
     index = index + 1
 key = int.from_bytes(key_bytes, byteorder=endian)
+pass_bytes = bytearray()
+for i in range(0,20):
+    pass_bytes.append(finalres[index])
+    index = index + 1
+def_digest = hashlib.sha1(default_password.encode())
+def_digest = def_digest.digest()
+
+if def_digest != pass_bytes:
+    #it was a protected file
+    count = 3
+    while count != 0:
+        count = count - 1
+        print("Enter password ")
+        password = input()
+        ip_bytes = hashlib.sha1(password.encode())
+        ip_bytes = ip_bytes.digest()
+        if ip_bytes != pass_bytes:
+            if count == 0:
+                print("Attempts exceeded. Exiting")
+                exit(0)
+            print("Incorrect password.",count," attempts remain")
+            continue
+        else:
+            #password was correct
+            break
+
 print(opfilecount)  # debug only
 
 # now we know files count 

@@ -20,6 +20,7 @@
 import sys
 import os
 import json
+import hashlib
 
 # default values 
 directory_name = "testit"
@@ -32,13 +33,14 @@ opformat = "gty"
 allowed_formats = ["jpg","png","jpeg"]
 endian = 'little'
 current_dir = "./"
+default_password = "pmqhfisbrkjcvklzxckliou"
 
 # flags 
 is_input_directory = False
 is_output_directory = False
 is_chunk_size = False
 is_key = False
-
+is_pass_protected = False
 #handling the flags to set/overwrite default values
 i = 1
 while i < len(sys.argv):
@@ -71,7 +73,8 @@ while i < len(sys.argv):
             if key<0 or key>256:
                 print("Key has to be between 0 to 256")
         # add new flags here 
-
+        elif flag == "p":
+            is_pass_protected = True
         else:
             print("Invalid flag ",flag)
             exit(0)
@@ -93,6 +96,9 @@ def encrpyt_bytes(b,key):
     for i in range(0,len(b)):
         b[i] = (b[i] + key)%256
     return b
+
+def getDecKey(key):
+    return (256-key)
 
 rel_pathname = os.path.join(current_dir,directory_name)
 #check input directory name is correct or not 
@@ -138,10 +144,24 @@ if files_count == 0:
 finalres = bytearray()  # this will have the entire bytearray
 files_count = files_count.to_bytes(8, endian)   #conv to bytearray
 cs_bytes = chunksize.to_bytes(4,endian)
-dec_key = 156
+dec_key = getDecKey(key)
 key_bytes = dec_key.to_bytes(4,endian)
-finalres = finalres + files_count + cs_bytes + key_bytes
 
+password = default_password
+if is_pass_protected == True:
+    print("Enter password")
+    password = input()
+    if len(password) == 0:
+        print("No password given. Creating unprotected files..")
+    else:
+        password = password.strip(" ")
+        password = password.strip("\n")
+
+password = hashlib.sha1(password.encode())
+password = password.digest()
+print(len(password))
+finalres = finalres + files_count + cs_bytes + key_bytes + password
+print("Header is ",len(finalres))
 #now for each file we append byte_count followed by encrypted bytes
 for tfile in file_names:
     filepath = os.path.join(current_dir,directory_name,tfile)
