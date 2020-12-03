@@ -8,14 +8,15 @@
 # feel free to add any further improvements 
 
 # scope for improvements 
-# TODO header contain chunksize and key 
+# TODO header contain chunksize and key  (DONE)
 # TODO modularize the code. Write in functions
-# TODO allocate 8 Bytes instead of 4. 4 bytes puts limitation on file size (4GB) and on filecount (4*10^9)
-# TODO flagged arguments (so that args dont have to be in order)
-# TODO improve parent directory handling. Explicitly mentioning "./" is never good
+# TODO allocate 8 Bytes instead of 4. 4 bytes puts limitation on file size (4GB) and on filecount (4*10^9) (DONE)
+# TODO flagged arguments (so that args dont have to be in order) (DONE)
+# TODO improve parent directory handling. Explicitly mentioning "./" is never good (DONE)
 # TODO add chunks directly to google drive 
 # TODO think upon compression algorithmns for different formats. 
 # TODO have an option for more robust process (say by including some metadata or recovery mechanisms)
+# TODO handle directory inside directory
 
 import sys
 import os
@@ -159,9 +160,8 @@ if is_pass_protected == True:
 
 password = hashlib.sha1(password.encode())
 password = password.digest()
-print(len(password))
+
 finalres = finalres + files_count + cs_bytes + key_bytes + password
-print("Header is ",len(finalres))
 #now for each file we append byte_count followed by encrypted bytes
 for tfile in file_names:
     filepath = os.path.join(current_dir,directory_name,tfile)
@@ -177,7 +177,7 @@ for tfile in file_names:
 
 # we convert the list and append at the end to restore the original names 
 finalres = finalres + filenames_enc
-print("finalres is ",len(finalres)) #this is for debugging
+# print("finalres is ",len(finalres)) #this is for debugging
 
 # now we have all bytes in finalres variable.
 # we need to chunk it

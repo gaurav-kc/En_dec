@@ -113,7 +113,7 @@ for afile in all_files:
     if format == opformat:
         filecount = filecount + 1
 
-print(filecount)    # debug purpose only 
+# print(filecount)    # debug purpose only 
 if filecount == 0:
     print("No compatible files found")
     exit(0)
@@ -133,7 +133,7 @@ for i in range(0,filecount):
     finalres = finalres + b     # append bytearray of current file to finalres
     file_obj.close() 
 
-print(len(finalres))  # debug only
+# print(len(finalres))  # debug only
 
 #entire object I have now
 index = 0   # this index will be our pointer to finalres. 
@@ -180,7 +180,7 @@ if def_digest != pass_bytes:
             #password was correct
             break
 
-print(opfilecount)  # debug only
+# print(opfilecount)  # debug only
 
 # now we know files count 
 # we know our format is bytecount bytes bytecount bytes ... 
@@ -208,7 +208,7 @@ while index < len(finalres):
 actual_names = actual_names.decode("utf-8") #decode that bytearray into string
 actual_names = actual_names.split(";")
 actual_names.pop() # last element will be empty as format was filename1;filename2; .. filenamek;
-print(actual_names) #debug only
+# print(actual_names) #debug only
 
 # now we have bytearray and filename in 2 lists. We create a file with filename and write the bytearray to it
 # In encrypted format, the order of bytes and filenames was same
@@ -229,4 +229,4 @@ for i in range(0,opfilecount):
     f = open(rec_filename, "wb")
     f.write(bytes_list[i])
     f.close()
-print("Done")
+print("Decryption done")
