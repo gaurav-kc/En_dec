@@ -22,6 +22,7 @@ import sys
 import os
 import json
 import hashlib
+from implemntation import template,def_behaviour,myImplementation
 
 # default values 
 directory_name = "testit"
@@ -91,15 +92,9 @@ while i < len(sys.argv):
             exit(0)
     i = i + 1
 
-
-def encrpyt_bytes(b,key):
-    #implement encryption logic here
-    for i in range(0,len(b)):
-        b[i] = (b[i] + key)%256
-    return b
-
-def getDecKey(key):
-    return (256-key)
+db = def_behaviour()
+setdb = template(db)
+lib = myImplementation(setdb)
 
 rel_pathname = os.path.join(current_dir,directory_name)
 #check input directory name is correct or not 
@@ -109,72 +104,28 @@ if not isdirectory:
     exit(-1)
 
 #check all files and formats
-tfile_names = os.listdir(rel_pathname)
-file_names = [] #this will have all filenames which will be actually encrypted
-filenames_enc = str()
-#analyze these names of files in directory
-for tfile in tfile_names:
-    temp = tfile.split(".")
-    #only one dot is allowed in filename
-    if len(temp) != 2:
-        print("Incorrect format ",tfile, " skipping it.")
-        continue
-    #check for delimeter
-    temp1 = tfile.split(";")
-    if len(temp1) != 1:
-        print("; found in ",tfile," which is not allowed")
-        continue
-    filename = temp[0]
-    format = temp[1]
-    #check if file has format in our list
-    if format not in allowed_formats:
-        print("Excluding file ",tfile)
-        continue
-    file_names.append(tfile)
-    filenames_enc = filenames_enc + tfile + ";"
-
-# this was added to restore the original filenames 
-# it is of type filename1;filename2; .. filenamek;
-filenames_enc = bytearray(filenames_enc,'utf-8')
+file_names, formats, filenames_enc = lib.enc_filenames(rel_pathname,allowed_formats)
 
 files_count = len(file_names)
 if files_count == 0:
     print("Nothing to encrpyt")
     exit(0)
 
-finalres = bytearray()  # this will have the entire bytearray
-files_count = files_count.to_bytes(8, endian)   #conv to bytearray
-cs_bytes = chunksize.to_bytes(4,endian)
-dec_key = getDecKey(key)
-key_bytes = dec_key.to_bytes(4,endian)
-
-password = default_password
-if is_pass_protected == True:
-    print("Enter password")
-    password = input()
-    if len(password) == 0:
-        print("No password given. Creating unprotected files..")
-    else:
-        password = password.strip(" ")
-        password = password.strip("\n")
-
-password = hashlib.sha1(password.encode())
-password = password.digest()
-
-finalres = finalres + files_count + cs_bytes + key_bytes + password
+finalres = lib.getHeader(files_count,chunksize,key,endian,default_password,is_pass_protected)
 #now for each file we append byte_count followed by encrypted bytes
-for tfile in file_names:
-    filepath = os.path.join(current_dir,directory_name,tfile)
+
+for i in range(0,len(file_names)):
+    filepath = os.path.join(current_dir,directory_name,file_names[i])
     with open(filepath,"rb") as temp_file:
         f = temp_file.read()
         b = bytearray(f)
         size = int(len(b))
         #encrypt the bytes 
-        b = encrpyt_bytes(b,key)
+        b = lib.encodeBytes(b,formats[i])
+        b = lib.encrypt(b,key)
         #append the data
         size = size.to_bytes(8,endian)  #if file size goes beyound 4GB handle here
         finalres = finalres + size + b  #append byte count and that many bytes
-
 # we convert the list and append at the end to restore the original names 
 finalres = finalres + filenames_enc
 # print("finalres is ",len(finalres)) #this is for debugging

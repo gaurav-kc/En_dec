@@ -21,12 +21,12 @@ import sys
 import os
 import json
 import hashlib
-
+from implemntation import template,def_behaviour,myImplementation
 # default values
-directory_name = "encrypted" #1st argument
-op_directory_name = "decrypted" #2nd argument
-chunksize = 10000 #3rd argument
-key = 200 #4th argument 
+directory_name = "encrypted"
+op_directory_name = "decrypted"
+# chunksize = 10000
+# key = 200 # we get cs and key from header now 
 commonname = "bpsnecjkx"
 delimeter = "_"
 opformat = "gty"
@@ -89,12 +89,9 @@ while i < len(sys.argv):
             exit(0)
     i = i + 1
 
-
-def decrpyt_bytes(b,key):
-    #implement decryption logic here
-    for i in range(0,len(b)):
-        b[i] = (b[i] + key)%256
-    return b
+db = def_behaviour()
+setdb = template(db)
+lib = myImplementation(setdb)
 
 # construct the entire bytearray (combined of all chunks)
 # check if given directory exists
@@ -136,30 +133,10 @@ for i in range(0,filecount):
 # print(len(finalres))  # debug only
 
 #entire object I have now
-index = 0   # this index will be our pointer to finalres. 
+# this index will be our pointer to finalres. 
 # in case any data is read through finalres, never ever forget to inc index 
-
-opfilecount = bytearray()   # this will have number of files that will be created
-for i in range(0,8):    # in our case, first 8 bytes will be interpreted as integer and stores how many files are there
-    opfilecount.append(finalres[index])
-    index = index + 1
-opfilecount = int.from_bytes(opfilecount, byteorder=endian)
-chunk_bytes = bytearray()
-for i in range(0,4):
-    chunk_bytes.append(finalres[index])
-    index = index + 1
-chunksize = int.from_bytes(chunk_bytes, byteorder=endian)
-key_bytes = bytearray()
-for i in range(0,4):
-    key_bytes.append(finalres[index])
-    index = index + 1
-key = int.from_bytes(key_bytes, byteorder=endian)
-pass_bytes = bytearray()
-for i in range(0,20):
-    pass_bytes.append(finalres[index])
-    index = index + 1
-def_digest = hashlib.sha1(default_password.encode())
-def_digest = def_digest.digest()
+opfilecount, chunksize, key, pass_bytes, index = lib.decodeHeader(finalres,endian)
+def_digest = lib.getPassHash(default_password)
 
 if def_digest != pass_bytes:
     #it was a protected file
@@ -168,8 +145,7 @@ if def_digest != pass_bytes:
         count = count - 1
         print("Enter password ")
         password = input()
-        ip_bytes = hashlib.sha1(password.encode())
-        ip_bytes = ip_bytes.digest()
+        ip_bytes = lib.getPassHash(password)
         if ip_bytes != pass_bytes:
             if count == 0:
                 print("Attempts exceeded. Exiting")
@@ -196,7 +172,6 @@ for i in range(opfilecount):
     for j in range(0,filesize):
         temp.append(finalres[index])
         index = index + 1
-    temp = decrpyt_bytes(temp,key)
     bytes_list.append(temp) # read filesize bytes into seperate bytearray and add it to the list
 
 # after storing all bytes, we had encoded and appended semi-colon seperated list of original filenames
@@ -208,12 +183,8 @@ while index < len(finalres):
 actual_names = actual_names.decode("utf-8") #decode that bytearray into string
 actual_names = actual_names.split(";")
 actual_names.pop() # last element will be empty as format was filename1;filename2; .. filenamek;
-# print(actual_names) #debug only
 
-# now we have bytearray and filename in 2 lists. We create a file with filename and write the bytearray to it
-# In encrypted format, the order of bytes and filenames was same
 
-# check if output directory exists
 opdir_path = os.path.join(current_dir,op_directory_name)
 if not os.path.exists(opdir_path):
     os.mkdir(opdir_path)
@@ -226,7 +197,13 @@ for i in range(0,opfilecount):
         choice = input()
         if choice != "y":
             continue
+    temp = actual_names[i].split(".")
+    if len(temp) != 2:
+        print("Some error occured in ",actual_names[i])
+    format = temp[1]
+    b = lib.decodeBytes(bytes_list[i],format)
+    b = lib.decrypt(b,key)
     f = open(rec_filename, "wb")
-    f.write(bytes_list[i])
+    f.write(b)
     f.close()
 print("Decryption done")
