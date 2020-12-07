@@ -90,7 +90,7 @@ class def_behaviour():
         # no as such format specific modification by default
         return b
 
-    def enc_filenames(self,rel_pathname,allowed_formats):
+    def enc_filenames(self,rel_pathname,finalformatlist,is_warning_suppressed):
         # task is to return list of filenames, list of respective formats, encoded string of all original filenames
         tfile_names = os.listdir(rel_pathname)
         file_names = []
@@ -110,9 +110,11 @@ class def_behaviour():
                 continue
             format = temp[1]
             #check if file has format in our list
-            if format not in allowed_formats:
-                print("Excluding file ",tfile)
-                continue
+            if len(finalformatlist) > 0:
+                if format not in finalformatlist:
+                    if not is_warning_suppressed:
+                        print("Excluding file ",tfile)
+                    continue
             file_names.append(tfile)
             formats.append(format)
             filenames_enc = filenames_enc + tfile + ";"

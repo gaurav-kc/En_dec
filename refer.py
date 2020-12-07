@@ -38,6 +38,6 @@ class myImplementation(def_behaviour):
         # given encoded bytes for a file and format, decode it as per how it was encoded
         return super().decodeBytes(b,format)
     
-    def enc_filenames(self,rel_pathname,allowed_formats):
+    def enc_filenames(self,rel_pathname,allowed_formats,is_warning_suppressed):
         # create your own mechanism to encode all original filenames here
-        return super().enc_filenames(rel_pathname,allowed_formats)
+        return super().enc_filenames(rel_pathname,allowed_formats,is_warning_suppressed)

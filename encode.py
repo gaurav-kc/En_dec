@@ -32,11 +32,14 @@ key = 56    # if not given, consider this value as key for your encryption algor
 commonname = "bpsnecjkx"    # common name for all chunked encrypted files
 delimeter = "_" # delimeter between common name and file number
 opformat = "gty"    # format for chunks. 
-allowed_formats = ["jpg","png","jpeg"]  # encrpyt only these format files 
+image_formats = ["jpg","png","jpeg","tiff","gif"] 
+video_formats = ["mp4","mov","mkv","flv"]
+doc_formats = ["docx","odt","xlsx","ots","pptx","odf"]
+prog_formats = ["cpp","java","c","py"]
 endian = 'little'   # in encode and decode, both should have same endian to write bytes
 current_dir = "./"
 default_password = "pmqhfisbrkjcvklzxckliou" # this is to detect whether password was provided or not
-
+finalformatlist = []
 # flags 
 # currently supported flags. (Input and output directory doesn't need any flag. order doenst matter. Flags and directories can be any order. All are optional)
 # anywhere, first directory name is assumed as input directory name and next as output directory name 
@@ -44,14 +47,18 @@ default_password = "pmqhfisbrkjcvklzxckliou" # this is to detect whether passwor
 # by default, output directory is asssumed in directory specified in variable op_directory_name
 # -cs <chunk_size>  (custom chunk size)
 # -k <key> (custom key)
+# -f  (comma seperated list. Possible elements : images,videos,docs) (consider only those files)
+# -sw (supress warning)
 # -p  (enable password protection)
 # -d  (print debugging statements)
 is_input_directory = False
 is_output_directory = False
 is_chunk_size = False
 is_key = False
+is_format_given = False
 is_pass_protected = False
 is_debug_mode = False
+is_warning_suppressed = False
 #handling the flags to set/overwrite default values
 i = 1
 while i < len(sys.argv):
@@ -83,6 +90,31 @@ while i < len(sys.argv):
                 exit(0)
             if key<0 or key>256:
                 print("Key has to be between 0 to 256")
+        elif flag == "f":
+            is_format_given = True
+            i = i + 1
+            temp = sys.argv[i]
+            temp = temp.split(",")
+            for j in temp:
+                if j == "images":
+                    for imgformat in image_formats:
+                        finalformatlist.append(imgformat)
+                elif j == "videos":
+                    for vidformat in video_formats:
+                        finalformatlist.append(vidformat)
+                elif j == "docs":
+                    for docformat in doc_formats:
+                        finalformatlist.append(docformat)
+                elif j == "prog":
+                    for progformat in prog_formats:
+                        finalformatlist.append(progformat)
+                # add another category here 
+                else:
+                    print("Unusual paramter",j,"for -f flag found")
+                    exit(0)
+            finalformatlist = list(dict.fromkeys(finalformatlist)) # remove duplicates in present
+        elif flag == "sw":
+            is_warning_suppressed = True
         elif flag == "p":
             is_pass_protected = True
         elif flag == "d":
@@ -115,7 +147,7 @@ if is_debug_mode:
 # get list of file_names, respective format, and filenames_enc is a compact representation
 # to store original filenames (to restore original filenames when we decrypt)
 # the filenames_enc is appended at the end. By default uses semicolon seperated filenames 
-file_names, formats, filenames_enc = lib.enc_filenames(rel_pathname,allowed_formats)
+file_names, formats, filenames_enc = lib.enc_filenames(rel_pathname,finalformatlist,is_warning_suppressed)
 
 #to avoid null cases. Check if there is atleast one file to encrypt
 files_count = len(file_names)
@@ -158,10 +190,11 @@ if is_debug_mode:
 # we need to chunk it
 # a warning is given as wrong chunk size can create millions of chunks
 chunkcount = int(len(finalres)/chunksize) + 1 
-print(chunkcount, " chunks will form. Are you sure you want to continue? y/n")
-choice = input()
-if choice != "y":
-    exit(0)
+if not is_warning_suppressed:
+    print(chunkcount, " chunks will form. Are you sure you want to continue? y/n")
+    choice = input()
+    if choice != "y":
+        exit(0)
 
 chunk_array = []    # this will be array of bytearrays where each bytearray is a chunk of size chunksize (except last)
 i = 0
