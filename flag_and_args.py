@@ -3,7 +3,7 @@ class enc_flags_and_args:
         # default values 
         ip_directory_name = "testit"   # if not given, expect files in this folder
         op_directory_name = "encrypted"     #if not given, put encrypted files in this folder
-        chunksize = 10000   # if not given, consider these many bytes as chunk size
+        chunksize = 100000   # if not given, consider these many bytes as chunk size
         key = 56    # if not given, consider this value as key for your encryption algorithm
         current_dir = "./"
         image_formats = ["jpg","png","jpeg","tiff","gif"] 

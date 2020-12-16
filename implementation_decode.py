@@ -22,12 +22,6 @@ class dec_def_behaviour():
             opfilecount.append(finalBlob[index])
             index = index + 1
         opfilecount = int.from_bytes(opfilecount, byteorder=args["_endian"])
-        # followed by chunkize
-        chunk_bytes = bytearray()
-        for _ in range(0,args["_cs_size"]):
-            chunk_bytes.append(finalBlob[index])
-            index = index + 1
-        chunksize = int.from_bytes(chunk_bytes, byteorder=args["_endian"])
         # followed by key (decrpytion key)
         key_bytes = bytearray()
         for _ in range(0,args["_dec_key_size"]):
@@ -41,7 +35,6 @@ class dec_def_behaviour():
             index = index + 1
         header = {}
         header["opfilecount"] = opfilecount
-        header["chunksize"] = chunksize
         header["key"] = key
         header["pass_bytes"] = pass_bytes
         
@@ -97,14 +90,14 @@ class dec_def_behaviour():
         finalBlob = bytearray()
         for i in range(0, chunkcount):
             filename = os.path.join(dir_path, encryptedFilenames[i])
-        if not os.path.exists(filename):
-            print(filename, " not found")
-            exit(0) # bilkul ricks nai lene ka
-        file_obj = open(filename,"rb")
-        f = file_obj.read()
-        b = bytearray(f)
-        finalBlob = finalBlob + b     # append bytearray of current file to finalres
-        file_obj.close() 
+            if not os.path.exists(filename):
+                print(filename, " not found")
+                exit(0) # bilkul ricks nai lene ka
+            file_obj = open(filename,"rb")
+            f = file_obj.read()
+            b = bytearray(f)
+            finalBlob = finalBlob + b     # append bytearray of current file to finalres
+            file_obj.close() 
         if flags["is_debug_mode"]:
             print("Size of entire blob is ",len(finalBlob))
         return finalBlob
@@ -115,7 +108,6 @@ class dec_def_behaviour():
         # if it matches with the passowrd in header, it means no password was set
         # but if it doesn't, password was set
         def_digest = self.getPassHash(self.args["_default_password"])
-
         if def_digest != pass_bytes:
             #it was a protected file
             count = 3   #number of attempts.
@@ -200,6 +192,7 @@ class dec_def_behaviour():
             f = open(filepath, "wb")
             f.write(b)
             f.close() # this is important ;p
+
     def getEncryptedFilenames(self, chunkcount):
         args = self.args
         chunk_names = []

@@ -78,8 +78,6 @@ class enc_def_behaviour():
         
         header = bytearray()  # this will have the entire header
         files_count = filecount.to_bytes(args["_filecount_size"], args["_endian"])   #conv to bytearray
-        chunksize = args["chunksize"]
-        cs_bytes = chunksize.to_bytes(args["_cs_size"],args["_endian"])     #conv to bytearray
         dec_key = self.getDecryptionKey()
         key_bytes = dec_key.to_bytes(args["_dec_key_size"],args["_endian"]) #conv to bytearray
 
@@ -95,7 +93,7 @@ class enc_def_behaviour():
                 password = password.strip("\n")
 
         password = self.getPassHash(password)
-        header = header + files_count + cs_bytes + key_bytes + password
+        header = header + files_count + key_bytes + password
         return header
 
     def constructBlob(self, filenames):
