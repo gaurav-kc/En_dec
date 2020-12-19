@@ -114,7 +114,6 @@ class dec_def_behaviour():
         if def_digest != pass_bytes:
             #it was a protected file
             count = 3   #number of attempts.
-            # TODO maybe add a flag to destroy all chunks if attempts are exceeded 
             while count != 0:
                 count = count - 1
                 print("Enter password ")

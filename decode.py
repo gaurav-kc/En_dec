@@ -8,14 +8,6 @@
 # as of now, header has filecount, key, password
 # as of now, fileheader has filesize, filename
 # After the successful execution, a folder will contain all recovered files
-# feel free to add any further improvements 
-
-# TODO implemenet this in flask as a web framework
-# TODO make a gui based executable for windows (which can be executed on windows like .exe)
-# TODO add chunks directly to google drive 
-# TODO think upon compression algorithmns for different formats. Use auto encoders or something to compress images 
-# TODO have an option for more robust process (say by including some metadata or recovery mechanisms). Think upon what if a chunk is missing, can we still recover?
-# TODO handle directory inside directory
 
 from blank_template_decode import blankTemplate
 # from your python file, import your class here.
