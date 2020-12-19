@@ -11,6 +11,7 @@ class enc_flags_and_args:
         doc_formats = ["docx","odt","xlsx","ots","pptx","odf"]
         prog_formats = ["cpp","java","c","py"]
         finalformatlist = []
+        encodeMode = 0  # default mode is 0
         # flags 
         # currently supported flags. (Input and output directory doesn't need any flag. order doenst matter. Flags and directories can be any order. All are optional)
         # anywhere, first directory name is assumed as input directory name and next as output directory name 
@@ -30,6 +31,7 @@ class enc_flags_and_args:
         is_pass_protected = False
         is_debug_mode = False
         is_warning_suppressed = False
+        is_encodeMode_given = False
         #handling the flags to set/overwrite default values
         i = 1
         while i < len(argv):
@@ -59,8 +61,6 @@ class enc_flags_and_args:
                     except IndexError:
                         print("No key given")
                         exit(0)
-                    if key<0 or key>256:
-                        print("Key has to be between 0 to 256")
                 elif flag == "f":
                     is_format_given = True
                     i = i + 1
@@ -90,6 +90,17 @@ class enc_flags_and_args:
                     is_pass_protected = True
                 elif flag == "d":
                     is_debug_mode = True
+                elif flag == "m":
+                    is_encodeMode_given = True
+                    i = i + 1
+                    try:
+                        encodeMode = int(argv[i])
+                    except ValueError:
+                        print("Encode mode should be an integer")
+                        exit(0)
+                    except IndexError:
+                        print("No mode given")
+                        exit(0)
                 # add new flags here 
                 else:
                     print("Invalid flag ",flag)
@@ -115,6 +126,7 @@ class enc_flags_and_args:
         flags["is_pass_protected"] = is_pass_protected
         flags["is_debug_mode"] = is_debug_mode
         flags["is_warning_suppressed"] = is_warning_suppressed
+        flags["is_encodeMode_given"] = is_encodeMode_given 
         
         args["ip_directory_name"] = ip_directory_name
         args["op_directory_name"] = op_directory_name
@@ -122,6 +134,7 @@ class enc_flags_and_args:
         args["key"] = key
         args["current_dir"] = current_dir
         args["finalformatlist"] = finalformatlist
+        args["encodeMode"] = encodeMode
         return flags, args
         
             
@@ -191,6 +204,7 @@ class commonArgs:
         _cs_size = 8
         _dec_key_size = 4
         _pass_size = 20
+        _encode_mode_size = 1
 
         flags = {}
         args = {}
@@ -203,5 +217,5 @@ class commonArgs:
         args["_cs_size"] = _cs_size
         args["_dec_key_size"] = _dec_key_size
         args["_pass_size"] = _pass_size
-        
+        args["_encode_mode_size"] = _encode_mode_size
         return flags, args

@@ -2,6 +2,10 @@ import hashlib
 import os
 
 class dec_def_behaviour():   
+    def __init__(self, flags, args):
+        self.flags = flags
+        self.args = args
+
     def initialize(self, flags, args):
         self.flags = flags
         self.args = args
@@ -12,9 +16,8 @@ class dec_def_behaviour():
             b[i] = (b[i] + key)%256
         return b
 
-    def decodeHeader(self,finalBlob):
+    def decodeHeader(self,finalBlob, index):
         # given the block, we have to decode header and return header contents.
-        index = 0 
         args = self.args
         # we have filecount at beginning
         opfilecount = bytearray() 
@@ -37,13 +40,7 @@ class dec_def_behaviour():
         header["opfilecount"] = opfilecount
         header["key"] = key
         header["pass_bytes"] = pass_bytes
-        
         return header, index
-    
-    def getPassHash(self,password):
-        # by default we use sha1 to hash the password
-        dig = hashlib.sha1(password.encode())
-        return dig.digest()
 
     def decodeFile(self, fileblob, filename):
         return fileblob
@@ -102,11 +99,12 @@ class dec_def_behaviour():
             print("Size of entire blob is ",len(finalBlob))
         return finalBlob
     
-    def checkPassword(self, pass_bytes):
+    def checkPassword(self, header):
         # we need to check for password. 
         # def_digest is hash for default password
         # if it matches with the passowrd in header, it means no password was set
         # but if it doesn't, password was set
+        pass_bytes = header["pass_bytes"]
         def_digest = self.getPassHash(self.args["_default_password"])
         if def_digest != pass_bytes:
             #it was a protected file
@@ -127,11 +125,12 @@ class dec_def_behaviour():
                     #password was correct
                     return
 
-    def getFileBlobList(self, finalBlob, index, opfilecount):
+    def getFileBlobList(self, finalBlob, index, header):
         # now we know files count 
         # we know that starting from the index, we have 
         # <file1info,filebytes> <file2size,filebytes> .. <fileksize,filebytes> <semicolon seperated names of all files in same order>
         # so we read that many bytes (each such bytes will be one decrypted file) and store then in an array and store that bytearray in an array
+        opfilecount = header["opfilecount"]
         bytes_list = [] #this will have list of bytearrays
         for i in range(opfilecount):
             filesize = bytearray()
@@ -162,9 +161,10 @@ class dec_def_behaviour():
             print("Names for",len(actual_names),"files were found")
         return actual_names
 
-    def recoverFiles(self, bytes_list, actual_names, key):
+    def recoverFiles(self, bytes_list, actual_names, header):
         args = self.args
         flags = self.flags
+        key = header["key"]
         opdir_path = os.path.join(args["current_dir"],args["op_directory_name"])
         # check if destination directory exists
         if not os.path.exists(opdir_path):
@@ -193,6 +193,20 @@ class dec_def_behaviour():
             f.write(b)
             f.close() # this is important ;p
 
+    def getEncodeCode(self, finalBlob):
+        index = 0
+        encodeMode = bytearray()
+        for _ in range(0,self.args["_encode_mode_size"]):
+            encodeMode.append(finalBlob[index])
+            index = index + 1
+        encodeMode = int.from_bytes(encodeMode, byteorder=self.args["_endian"])
+        return encodeMode, index
+    
+    def getPassHash(self,password):
+        # by default we use sha1 to hash the password
+        dig = hashlib.sha1(password.encode())
+        return dig.digest()
+    
     def getEncryptedFilenames(self, chunkcount):
         args = self.args
         chunk_names = []

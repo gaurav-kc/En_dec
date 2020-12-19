@@ -2,6 +2,10 @@ import hashlib
 import os
 
 class enc_def_behaviour(): 
+    def __init__(self, flags, args):
+        self.flags = flags
+        self.args = args
+
     def initialize(self, flags, args):
         self.flags = flags
         self.args = args
@@ -15,13 +19,12 @@ class enc_def_behaviour():
     def getDecryptionKey(self):
         # in this function, by default we have to return the corresponding decryption key to your encryption key
         # this is important as decryption key is included in header while encrypting
-        dec_key = 256 - self.args["key"]
+        key = self.args["key"]
+        if key<0 or key>256:
+            print("Key has to be between 0 to 256")
+            exit(0)
+        dec_key = 256 - key
         return dec_key
-    
-    def getPassHash(self,password):
-        # by default we use sha1 to hash the password
-        dig = hashlib.sha1(password.encode())
-        return dig.digest()
 
     def getMetaInformation(self):
         #return number of files and list of filenames which will be processed
@@ -80,7 +83,8 @@ class enc_def_behaviour():
         files_count = filecount.to_bytes(args["_filecount_size"], args["_endian"])   #conv to bytearray
         dec_key = self.getDecryptionKey()
         key_bytes = dec_key.to_bytes(args["_dec_key_size"],args["_endian"]) #conv to bytearray
-
+        encodeMode = self.args["encodeMode"]
+        encodeMode = encodeMode.to_bytes(args["_encode_mode_size"],args["_endian"])
         password = args["_default_password"]
         # we have to ask for password only when -p flag is specified
         if flags["is_pass_protected"] == True:
@@ -93,7 +97,7 @@ class enc_def_behaviour():
                 password = password.strip("\n")
 
         password = self.getPassHash(password)
-        header = header + files_count + key_bytes + password
+        header = header + encodeMode + files_count + key_bytes + password
         return header
 
     def constructBlob(self, filenames):
@@ -190,14 +194,6 @@ class enc_def_behaviour():
             f = open(chunkname,"wb")
             f.write(chunk_array[chunkNumber])
             f.close()       # this is important :D   
-
-    def getEncryptedFilenames(self, chunkcount):
-        args = self.args
-        chunk_names = []
-        for i in range(0, chunkcount):
-            chunkname = args["_commonname"] + args["_delimeter"] + str(i) + "." + args["_opformat"]
-            chunk_names.append(chunkname)
-        return chunk_names
     
     def abrupt_abortion(self, chunkNumber, encryptedFilenames):
         # a function to roll back changes used in the loop later
@@ -210,3 +206,16 @@ class enc_def_behaviour():
                 os.remove(chunkname)
             except FileNotFoundError:
                 print("Did not find ",chunkname)
+    
+    def getPassHash(self,password):
+        # by default we use sha1 to hash the password
+        dig = hashlib.sha1(password.encode())
+        return dig.digest()
+    
+    def getEncryptedFilenames(self, chunkcount):
+        args = self.args
+        chunk_names = []
+        for i in range(0, chunkcount):
+            chunkname = args["_commonname"] + args["_delimeter"] + str(i) + "." + args["_opformat"]
+            chunk_names.append(chunkname)
+        return chunk_names
