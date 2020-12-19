@@ -112,11 +112,15 @@ Additional details in respective section.
 2. Encoding 
 This component converts files into chunks. But there is added fun to this. 
 At first, idea was to simply read the files, combine the binary data and break it into chunks. But what if, we add other stuff in this process? As of now, I have added 2 more stages, encode file and encrypt data. The files can be encoded as per the format into it's compressed representation. Further, those bytes can be encrypted before they are converted into chunks. Best part is, you can add your own encoding and encrypting mechanisms or change other details in your implementation. Also, each file here will also have a header which can store additional information you want to store.
+
+
 ![](Endec_encode.png)
 
 3. Decoding
 This component identifies and converts chunks into original files.
 The stages followed while encoding, are performed in a reverse manner while decoding. First, all the data from chunks is combined to form a big blob. Then the header is decoded to get the meta information like number of files, decrpytion key, is it password protected and if yes, hash of the password, and so on. Then, the data is read for every file, decrypted and then decoded to recover the original file from it. 
+
+
 ![](Endec_decode.png)
 
 [//]: # 
