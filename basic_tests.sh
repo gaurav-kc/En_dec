@@ -1,6 +1,5 @@
 echo "Cleaning directories if they exists"
-rm -r encrypted 
-rm -r decrypted
+./clean.sh
 
 echo -e "\n\n **** Starting tests **** \n"
 echo "Running test 1. No args given"

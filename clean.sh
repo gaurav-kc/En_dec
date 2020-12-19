@@ -1,3 +1,5 @@
+# delete all directories that can exist 
+# do this before push or just to clean directory
 rm -r encrypted
 rm -r decrypted
 rm -r temp_dir

@@ -11,14 +11,25 @@ class enc_def_behaviour():
         self.args = args
 
     def encrypt(self,b):
+        # function called when a blob has to be encrypted
         # by default, this is simple byte level encryption where we add key to byte and take % 256 as byte as 0-255 range
         for i in range(0,len(b)):
             b[i] = (b[i] + self.args["key"])%256
         return b
+    
+    def encodeFile(self, filepath, filename):
+        # function takes a filepath and name as args. Here, we can encode a particular file as per format to compress it 
+        # or make it robust or for any other purpose
+        with open(filepath,"rb") as temp_file:
+            f = temp_file.read()
+            b = bytearray(f)
+            # by default does nothing
+            return b
 
     def getDecryptionKey(self):
         # in this function, by default we have to return the corresponding decryption key to your encryption key
         # this is important as decryption key is included in header while encrypting
+        # by default the decryption key is 256 - encrpytion key
         key = self.args["key"]
         if key<0 or key>256:
             print("Key has to be between 0 to 256")
@@ -27,9 +38,11 @@ class enc_def_behaviour():
         return dec_key
 
     def getMetaInformation(self):
-        #return number of files and list of filenames which will be processed
+        # this function returns metainformation about the input folder in the form of dictionary. 
+        # by default, returns number of files and list of filenames.
         args = self.args
         flags = self.flags
+        MetaInformation = {}
         real_pathname = os.path.join(args["current_dir"],args["ip_directory_name"])
         #check input directory name is correct or not 
         isdirectory = os.path.isdir(real_pathname)
@@ -38,17 +51,23 @@ class enc_def_behaviour():
             exit(-1)
         if flags["is_debug_mode"]:
             print("Looking for files in ",real_pathname)
-        filenames = self.getFilenames(real_pathname)
+        filenames = self.getFilenames(real_pathname)    # function call to get only those filenames which we are cosidering
         filecount = len(filenames)
-        return filecount, filenames
+        MetaInformation["filecount"] = filecount
+        MetaInformation["filenames"] = filenames
+    
+        return MetaInformation
         
     def getFilenames(self, path):
-        #return list of file names in a folder (expects a path)
+        # this function returns a list of only those filenames which have format of our use in the directory at the path 
         tfile_names = os.listdir(path)
         filenames = []
         finalformatlist = self.args["finalformatlist"]
         #analyze these names of files in directory
         for tfile in tfile_names:
+            if len(tfile) >= self.args["_filename_size"]:
+                print("Filename ",tfile,"too large. Skipping it.")
+                continue
             temp = tfile.split(".")
             #only one dot is allowed in filename
             if len(temp) != 2:
@@ -69,7 +88,16 @@ class enc_def_behaviour():
             filenames.append(tfile)
         return filenames
 
-    def constructHeader(self, filecount):
+    def getEncodeMode(self):
+        # this function returns the encodeMode number in bytearray form
+        encodeMode = self.args["encodeMode"]
+        encodeMode = encodeMode.to_bytes(self.args["_encode_mode_size"],self.args["_endian"])
+        return encodeMode
+
+    def constructHeader(self, MetaInformation, encodeMode):
+        # using the metainformation, flags and arguments, this function constructs the primary header.
+        # the header is appended after encodeMode
+        filecount = MetaInformation["filecount"]
         args = self.args
         flags = self.flags
 
@@ -83,8 +111,6 @@ class enc_def_behaviour():
         files_count = filecount.to_bytes(args["_filecount_size"], args["_endian"])   #conv to bytearray
         dec_key = self.getDecryptionKey()
         key_bytes = dec_key.to_bytes(args["_dec_key_size"],args["_endian"]) #conv to bytearray
-        encodeMode = self.args["encodeMode"]
-        encodeMode = encodeMode.to_bytes(args["_encode_mode_size"],args["_endian"])
         password = args["_default_password"]
         # we have to ask for password only when -p flag is specified
         if flags["is_pass_protected"] == True:
@@ -95,15 +121,29 @@ class enc_def_behaviour():
             else:
                 password = password.strip(" ")
                 password = password.strip("\n")
-
         password = self.getPassHash(password)
-        header = header + encodeMode + files_count + key_bytes + password
+        
+        header = files_count + key_bytes + password
+        # append header to the encodemode
+        header = encodeMode + header
         return header
 
-    def constructBlob(self, filenames):
+    def constructFileHeader(self, size, filename):
+        # with the argument provided, this function creates file header for a particular file
+        fileHeader = bytearray()
+        size = size.to_bytes(self.args["_cs_size"],self.args["_endian"])
+        fileHeader = fileHeader + size
+        filename = filename.ljust(self.args["_filename_size"], ";")
+        filename = bytearray(filename,'utf-8')
+        fileHeader = fileHeader + filename
+        return fileHeader
+
+    def constructBlob(self, MetaInformation):
+        # this function reads each file, encodes it, encrypts it and adds the blobs of all the files and returns it.
         args = self.args
         flags = self.flags
         #now for each file we append byte_count followed by encrypted bytes
+        filenames = MetaInformation["filenames"]
         filesblob = bytearray()
         for i in range(0,len(filenames)):
             filepath = os.path.join(args["current_dir"],args["ip_directory_name"],filenames[i])
@@ -116,30 +156,15 @@ class enc_def_behaviour():
             #you can implement various encrpytion algorithms. Even on groups of bytes. Key is given 4Bytes in header but can be dec/inc as per req
             b = self.encrypt(b)
             #append the size 
-            size = size.to_bytes(args["_cs_size"],args["_endian"])  
-            filesblob = filesblob + size + b  #append byte count and that many bytes
+            fileHeader = self.constructFileHeader(size, filenames[i]) 
+            filesblob = filesblob + fileHeader + b  #append byte count and that many bytes
         if flags["is_debug_mode"]:
             print("Size of files blob is ", len(filesblob))
         return filesblob
-    
-    def encodeFile(self, filepath, filename):
-        with open(filepath,"rb") as temp_file:
-            f = temp_file.read()
-            b = bytearray(f)
-            return b
-
-    def constructFilenameBlob(self, filenames):
-        filenames_enc = str()
-        for tfile in filenames:
-            filenames_enc = filenames_enc + tfile + ";"
-        # this will be added to restore the original filenames 
-        # it is of type filename1;filename2; .. filenamek;
-        filenames_enc = bytearray(filenames_enc,'utf-8')
-        return filenames_enc
 
     def chunkBlob(self, blob):
         # now we have all bytes in blob variable.
-        # we need to chunk it
+        # we need to chunk it, break the big blob into pieces
         # a warning is given as small chunk size can create millions of chunks
         args = self.args
         flags = self.flags
@@ -165,6 +190,7 @@ class enc_def_behaviour():
         return chunk_array
     
     def saveChunks(self, chunk_array):
+        # this function will save each chunk from the list of chunks as a file 
         args = self.args
         flags = self.flags
         output_direc = os.path.join(args["current_dir"],args["op_directory_name"])
@@ -206,13 +232,19 @@ class enc_def_behaviour():
                 os.remove(chunkname)
             except FileNotFoundError:
                 print("Did not find ",chunkname)
-    
+ 
+    # these functions (below this line) should be present in both and must be exactly same
     def getPassHash(self,password):
+        # this function is called when a password has to be hashed
         # by default we use sha1 to hash the password
         dig = hashlib.sha1(password.encode())
         return dig.digest()
     
     def getEncryptedFilenames(self, chunkcount):
+        # here is the file naming logic. By default, list of filenames for chunks is a function of chunkcount.
+        # if you implement your own logic (say you don't want filenames to appear serially due to <filename>_0 , override this function, but make sure that 
+        # the function does not use randomization. For eg, getEncryptedFilenames(5), should always return same list of names. This is required as we need the
+        # same list when we have to identify the chunks)
         args = self.args
         chunk_names = []
         for i in range(0, chunkcount):

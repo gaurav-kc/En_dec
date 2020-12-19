@@ -11,13 +11,19 @@ class dec_def_behaviour():
         self.args = args
 
     def decrypt(self,b,key):
+        # this function is called when we have to decrypt a file blob
         # by default, this is simple byte level decryption where we add dec key to byte and take % 256 as byte as 0-255 range
         for i in range(0,len(b)):
             b[i] = (b[i] + key)%256
         return b
+    
+    def decodeFile(self, fileblob, filename, fileHeader):
+        # this function is called when a fileblob has to be decoded. The filename is to get the format and decode blob accordingly.
+        # by default does nothing
+        return fileblob
 
     def decodeHeader(self,finalBlob, index):
-        # given the block, we have to decode header and return header contents.
+        # given the final blob (the whole blob), we have to decode header and return header contents as a dictionary
         args = self.args
         # we have filecount at beginning
         opfilecount = bytearray() 
@@ -42,11 +48,8 @@ class dec_def_behaviour():
         header["pass_bytes"] = pass_bytes
         return header, index
 
-    def decodeFile(self, fileblob, filename):
-        return fileblob
-
     def identifyChunks(self):
-        # check if given directory exists
+        # this function is to get the count of chunks in input folder.
         args = self.args
         flags = self.flags
         dir_path = os.path.join(args["current_dir"],args["ip_directory_name"])
@@ -55,12 +58,11 @@ class dec_def_behaviour():
             exit(0)
         if flags["is_debug_mode"]:
             print("Looking for files in ",dir_path)
-        # this step is to avoid all other files apart from what we recognize as chunk
-        # we only take count of such files and assume the files are from 0 to filecount-1 (maybe not the best way)
+        # this step is to count the chunks and avoid all other files apart from what we recognize as chunk
         all_files = os.listdir(dir_path)
         chunkcount = 0
         for afile in all_files:
-            if self.isChunk(afile):
+            if self.isChunk(afile): # function call to identify a filename as chunk
                 chunkcount = chunkcount + 1
         if chunkcount == 0:
             print("No compatible files found")
@@ -70,6 +72,8 @@ class dec_def_behaviour():
         return chunkcount
 
     def isChunk(self, filename):
+        # checks if a filename is identified as chunk or not 
+        # by defaults assumes, if the format is as per _opformat in args , then it is chunk
         filename = filename.split(".")
         if len(filename) != 2:
             return False
@@ -79,9 +83,10 @@ class dec_def_behaviour():
         return False
     
     def constructBlob(self, chunkcount):
-        # finalBlob will have the entire bytes 
+        # a function that reads all the chunks and combines all the blobs into a big blob
         args = self.args
         flags = self.flags
+        # to get the chunk names
         encryptedFilenames = self.getEncryptedFilenames(chunkcount)
         dir_path = os.path.join(args["current_dir"],args["ip_directory_name"])
         finalBlob = bytearray()
@@ -93,7 +98,7 @@ class dec_def_behaviour():
             file_obj = open(filename,"rb")
             f = file_obj.read()
             b = bytearray(f)
-            finalBlob = finalBlob + b     # append bytearray of current file to finalres
+            finalBlob = finalBlob + b     # append bytearray of current file to finalBlob
             file_obj.close() 
         if flags["is_debug_mode"]:
             print("Size of entire blob is ",len(finalBlob))
@@ -101,7 +106,7 @@ class dec_def_behaviour():
     
     def checkPassword(self, header):
         # we need to check for password. 
-        # def_digest is hash for default password
+        # def_digest is hash for _default_password
         # if it matches with the passowrd in header, it means no password was set
         # but if it doesn't, password was set
         pass_bytes = header["pass_bytes"]
@@ -109,6 +114,7 @@ class dec_def_behaviour():
         if def_digest != pass_bytes:
             #it was a protected file
             count = 3   #number of attempts.
+            # TODO maybe add a flag to destroy all chunks if attempts are exceeded 
             while count != 0:
                 count = count - 1
                 print("Enter password ")
@@ -125,45 +131,53 @@ class dec_def_behaviour():
                     #password was correct
                     return
 
+    def getFileHeader(self, finalBlob, index):
+        # from the big blob, get a file header for a file. Read from index pointer. Return a dictionary
+        fileHeader = {}
+        filesize = bytearray()
+        for _ in range(0,self.args["_cs_size"]):    # 8 bytes to store bytes count 
+            filesize.append(finalBlob[index])
+            index = index + 1
+        filesize = int.from_bytes(filesize, byteorder=self.args["_endian"])
+        # get other file header info here
+        filename = bytearray()
+        for _ in range(0,self.args["_filename_size"]):
+            filename.append(finalBlob[index])
+            index = index + 1
+        filename = filename.decode("utf-8")
+        filename = filename.split(";")
+        filename = filename[0]
+        fileHeader["filesize"] = filesize
+        fileHeader["filename"] = filename
+        return fileHeader, index
+
     def getFileBlobList(self, finalBlob, index, header):
         # now we know files count 
         # we know that starting from the index, we have 
-        # <file1info,filebytes> <file2size,filebytes> .. <fileksize,filebytes> <semicolon seperated names of all files in same order>
-        # so we read that many bytes (each such bytes will be one decrypted file) and store then in an array and store that bytearray in an array
+        # <file1Header,filebytes> <file2Header,filebytes> .. <filekHeader,filebytes>
+        # so we first read tehe header, then the blob. And make a dictionary and return a list of such dictionary
         opfilecount = header["opfilecount"]
+        filesInfoList = []
         bytes_list = [] #this will have list of bytearrays
-        for i in range(opfilecount):
-            filesize = bytearray()
-            for j in range(0,self.args["_cs_size"]):    # 8 bytes to store bytes count 
-                filesize.append(finalBlob[index])
-                index = index + 1
-            filesize = int.from_bytes(filesize, byteorder=self.args["_endian"])
+        for _ in range(opfilecount):
+            fileHeader, index = self.getFileHeader(finalBlob, index)
+            filesize = fileHeader["filesize"]
             temp = bytearray()
-            for j in range(0,filesize): # read that many bytes
+            for _ in range(0,filesize): # read that many bytes
                 temp.append(finalBlob[index])
                 index = index + 1
-            bytes_list.append(temp) # read filesize bytes into seperate bytearray and add it to the list
+            fileInfo = {}
+            fileInfo["blob"] = temp
+            fileInfo["fileHeader"] = fileHeader
+            filesInfoList.append(fileInfo)
         if self.flags["is_debug_mode"]:
             print("Number of files recovered is ",len(bytes_list))
-        return bytes_list, index
+        return filesInfoList, index
 
-    def getActualNames(self, finalBlob, index):
-        # after storing all file bytes, we had encoded and appended semi-colon seperated list of original filenames
-        # we recover it now
-        actual_names = bytearray()  
-        while index < len(finalBlob):
-            actual_names.append(finalBlob[index])
-            index = index + 1
-        actual_names = actual_names.decode("utf-8") #decode that bytearray into string
-        actual_names = actual_names.split(";")
-        actual_names.pop() # last element will be empty as format was filename1;filename2; .. filenamek;
-        if self.flags["is_debug_mode"]:
-            print("Names for",len(actual_names),"files were found")
-        return actual_names
-
-    def recoverFiles(self, bytes_list, actual_names, header):
+    def recoverFiles(self, filesInfoList, header):
+        # in this function, given a list of dictionaries, and header (for key), decrypt and decode the file and save the file in output folder 
         args = self.args
-        flags = self.flags
+        # flags = self.flags
         key = header["key"]
         opdir_path = os.path.join(args["current_dir"],args["op_directory_name"])
         # check if destination directory exists
@@ -177,23 +191,28 @@ class dec_def_behaviour():
             choice = input()
             if choice != "y":
                 exit(0)
-        for i in range(0, len(bytes_list)):
-            filepath = os.path.join(opdir_path, actual_names[i])
+        for i in range(0, len(filesInfoList)):
+            fileHeader = filesInfoList[i]["fileHeader"]
+            filename = fileHeader["filename"]
+            filepath = os.path.join(opdir_path, filename)
             # check if file exists 
             if os.path.exists(filepath):
-                print("The file ",actual_names[i], " already exists. Overwrite it? y/n")
+                print("The file ",filename, " already exists. Overwrite it? y/n")
                 choice = input()
                 if choice != "y":
+                    # if the file need not be overwritten, create a copy_of_<filename> file
                     print("Creating a copy")
-                    filename = "Copy_of_" + actual_names[i]
+                    filename = "Copy_of_" + filename
                     filepath = os.path.join(opdir_path, filename)
-            b = self.decrypt(bytes_list[i], key)
-            b = self.decodeFile(b,actual_names[i])
+            blob = filesInfoList[i]["blob"]
+            blob = self.decrypt(blob, key)
+            blob = self.decodeFile(blob,filename,fileHeader)
             f = open(filepath, "wb")
-            f.write(b)
+            f.write(blob)
             f.close() # this is important ;p
 
     def getEncodeCode(self, finalBlob):
+        # when the full blob is made, the first _encode_mode_size rep the encode mode, i.e in which mode they were encoded
         index = 0
         encodeMode = bytearray()
         for _ in range(0,self.args["_encode_mode_size"]):
@@ -202,12 +221,18 @@ class dec_def_behaviour():
         encodeMode = int.from_bytes(encodeMode, byteorder=self.args["_endian"])
         return encodeMode, index
     
+    # these functions (below this line) should be present in both and must be exactly same
     def getPassHash(self,password):
+        # this function is called when a password has to be hashed
         # by default we use sha1 to hash the password
         dig = hashlib.sha1(password.encode())
         return dig.digest()
     
     def getEncryptedFilenames(self, chunkcount):
+        # here is the file naming logic. By default, list of filenames for chunks is a function of chunkcount.
+        # if you implement your own logic (say you don't want filenames to appear serially due to <filename>_0 , override this function, but make sure that 
+        # the function does not use randomization. For eg, getEncryptedFilenames(5), should always return same list of names. This is required as we need the
+        # same list when we have to identify the chunks)
         args = self.args
         chunk_names = []
         for i in range(0, chunkcount):

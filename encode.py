@@ -2,50 +2,62 @@
 
 # This is a program to encrypt and chunk you files 
 # The program reads the files and then encrypts the bytes, and store it in chunks
-# format of the entire (unchunked) is like this 
+# format of the entire blob(unchunked) is like this 
 # a file is an array of bytes 
-# <header> <file1info,filebytes> <file2size,filebytes> .. <fileksize,filebytes> <semicolon seperated names of all files in same order>
-# all these bytes are appended serially 
+# <encodeMode> <header> <file1Header,filebytes> <file2Header,filebytes> .. <filekHeader,filebytes>
+# as of now, header has filecount, key, password
+# as of now, fileheader has filesize, filename
+# After the successful execution, a folder will contain all chunks
 # feel free to add any further improvements 
 
-# TODO make a gui
+# TODO implemenet this in flask as a web framework
+# TODO make a gui based executable for windows (which can be executed on windows like .exe)
 # TODO add chunks directly to google drive 
 # TODO think upon compression algorithmns for different formats. Use auto encoders or something to compress images 
-# TODO have an option for more robust process (say by including some metadata or recovery mechanisms). 
+# TODO have an option for more robust process (say by including some metadata or recovery mechanisms). Think upon what if a chunk is missing, can we still recover?
 # TODO handle directory inside directory
 
+from blank_template_encode import blankTemplate
 from lib_encode import myImplementation
 # from your python file, import your class here.
 
 from flag_and_args import enc_flags_and_args
 import sys
 
+# process and set the default args as per flags
 faa = enc_flags_and_args()
 flags, args = faa.getFlagsAndArgs(sys.argv)
 # those flags and default values will be set for implementation
+
 lib = None
 if args["encodeMode"] == 0: # default mode 
-    lib = myImplementation(flags, args)
+    lib = blankTemplate(flags, args)
 # add further modes here
+if args["encodeMode"] == 1: # sample mode
+    lib = myImplementation(flags, args)
+    
 if lib is None:
     print("Invalid encode code")
     exit(0)
-# get the count and list of filenames we will process
-filecount, filenames = lib.getMetaInformation()
-# construct the header for the blob
-header = lib.constructHeader(filecount)
+
+# get the metainformation like count of files, filenames, from the input folder
+MetaInformation = lib.getMetaInformation()
+# get bytearray formed encode mode to append
+encodeMode = lib.getEncodeMode()
+# construct the header for the blob. The header will be appended after encodeMode
+header = lib.constructHeader(MetaInformation, encodeMode)
 # create a blob of all files bytearrays appended
-filesblob = lib.constructBlob(filenames)
-# encode actual file names to use it while recovery
-filenames_enc = lib.constructFilenameBlob(filenames)
-# combine header, fileblob and filename encoding blob
+filesblob = lib.constructBlob(MetaInformation)
+# combine header and fileblob
 try:
-    blob = header + filesblob + filenames_enc
+    blob = header + filesblob
 except TypeError:
-    print("No such files found")
+    print("No such files found") # in case filesblob turns out to be empty.
     exit(0)
-# chunk the blob into desired sized chunks
+# chunk the blob into desired sized chunks. Break the big blob into pieces
 chunk_array = lib.chunkBlob(blob)
 # save all chunks into files
 lib.saveChunks(chunk_array)
+# perform any custom action. Pass params as required 
+lib.performSomeAction()
 print("Encryption successful")

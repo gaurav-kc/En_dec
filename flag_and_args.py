@@ -1,3 +1,6 @@
+# this class is to handle the flags and set the arguments
+# with the flags and args as a dictionary, it becomes easy to add flags or arguments and access it anywhere in other files.
+
 class enc_flags_and_args:
     def getFlagsAndArgs(self,argv):
         # default values 
@@ -135,6 +138,7 @@ class enc_flags_and_args:
         args["current_dir"] = current_dir
         args["finalformatlist"] = finalformatlist
         args["encodeMode"] = encodeMode
+        #anywhere access arguments or flags via this dictionary now
         return flags, args
         
             
@@ -146,12 +150,11 @@ class dec_flags_and_args:
         current_dir = "./"
         # presence of default password shows no password was given 
 
-        # flags 
         # user need not remember whatever custom/default chunk value and key was used while encrypting. Hence no flags for that
         # if specified, first directory name will be assumed as input dir name and next as output directory name. Both are optional
         # by default it would assume input from directory name mentioned in variable directory_name
         # by default it would put all recovered files in directory mentioned in variable op_directory_name
-        # flags supported yet
+        # flags supported
         # -d  (print debugging statements)
         is_input_directory = False
         is_output_directory = False
@@ -205,7 +208,9 @@ class commonArgs:
         _dec_key_size = 4
         _pass_size = 20
         _encode_mode_size = 1
-
+        _filename_size = 64
+        _date_time = 32
+        
         flags = {}
         args = {}
         args["_commonname"] = _commonname
@@ -218,4 +223,6 @@ class commonArgs:
         args["_dec_key_size"] = _dec_key_size
         args["_pass_size"] = _pass_size
         args["_encode_mode_size"] = _encode_mode_size
+        args["_filename_size"] = _filename_size
+        args["_date_time"] = _date_time
         return flags, args
