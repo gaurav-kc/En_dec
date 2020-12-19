@@ -103,25 +103,6 @@ will work.
 (All necessary details are included in the header itself, so that user need not remember it while decdoding)
 ### Add your implementation
 
-1. Introduction
-For any reason like (storing files such that they cannot be opened by anyone else, or chunk bunch of files into fixed sized chunks say 1GB to easily upload and store it on cloud, or any other reasons) you might require to convert some files into fixed sized chunks. The first component of the project (the process of encoding) is dedicated to do this. The encoding and decoding processes work in a pipeline fashion to make it customizable. In short 
-files -> encoding -> chunks
-chunks -> decoding -> files
-Additional details in respective section.
-
-2. Encoding 
-This component converts files into chunks. But there is added fun to this. 
-At first, idea was to simply read the files, combine the binary data and break it into chunks. But what if, we add other stuff in this process? As of now, I have added 2 more stages, encode file and encrypt data. The files can be encoded as per the format into it's compressed representation. Further, those bytes can be encrypted before they are converted into chunks. Best part is, you can add your own encoding and encrypting mechanisms or change other details in your implementation. Also, each file here will also have a header which can store additional information you want to store.
-
-
-![](Endec_encode.png)
-
-3. Decoding
-This component identifies and converts chunks into original files.
-The stages followed while encoding, are performed in a reverse manner while decoding. First, all the data from chunks is combined to form a big blob. Then the header is decoded to get the meta information like number of files, decrpytion key, is it password protected and if yes, hash of the password, and so on. Then, the data is read for every file, decrypted and then decoded to recover the original file from it. 
-
-
-![](Endec_decode.png)
 
 [//]: # 
    [git-repo-url]: <https://github.com/gaurav-kc/Enc_dec.git>
