@@ -151,10 +151,10 @@ class enc_def_behaviour():
             #for example, use an auto encoder to compress an image. And use that compressed representation to store that image
             #similarly, pdfs and other formatted files can be modified to either compress or have some meta info for recovery etc
             b = self.encodeFile(filepath, filenames[i])
-            size = int(len(b))
             #the bytes should be encrypted. Right now it uses byte level encryption and simply adds key and takes % 256. (as a byte is 0-255)
             #you can implement various encrpytion algorithms. Even on groups of bytes. Key is given 4Bytes in header but can be dec/inc as per req
             b = self.encrypt(b)
+            size = int(len(b))
             #append the size 
             fileHeader = self.constructFileHeader(size, filenames[i]) 
             filesblob = filesblob + fileHeader + b  #append byte count and that many bytes
