@@ -138,6 +138,20 @@ class enc_def_behaviour():
         fileHeader = fileHeader + filename
         return fileHeader
 
+    def getFileBlob(self, filepath, filename):
+        #encodeFile function can be used to encode the file as per format
+        #for example, use an auto encoder to compress an image. And use that compressed representation to store that image
+        #similarly, pdfs and other formatted files can be modified to either compress or have some meta info for recovery etc
+        b = self.encodeFile(filepath, filename)
+        #the bytes should be encrypted. Right now it uses byte level encryption and simply adds key and takes % 256. (as a byte is 0-255)
+        #you can implement various encrpytion algorithms. Even on groups of bytes. Key is given 4Bytes in header but can be dec/inc as per req
+        b = self.encrypt(b)
+        size = int(len(b))
+        #append the size 
+        fileHeader = self.constructFileHeader(size, filename) 
+        fblob = fileHeader + b
+        return fblob
+
     def constructBlob(self, MetaInformation):
         # this function reads each file, encodes it, encrypts it and adds the blobs of all the files and returns it.
         args = self.args
@@ -147,17 +161,8 @@ class enc_def_behaviour():
         filesblob = bytearray()
         for i in range(0,len(filenames)):
             filepath = os.path.join(args["current_dir"],args["ip_directory_name"],filenames[i])
-            #encodeFile function can be used to encode the file as per format
-            #for example, use an auto encoder to compress an image. And use that compressed representation to store that image
-            #similarly, pdfs and other formatted files can be modified to either compress or have some meta info for recovery etc
-            b = self.encodeFile(filepath, filenames[i])
-            #the bytes should be encrypted. Right now it uses byte level encryption and simply adds key and takes % 256. (as a byte is 0-255)
-            #you can implement various encrpytion algorithms. Even on groups of bytes. Key is given 4Bytes in header but can be dec/inc as per req
-            b = self.encrypt(b)
-            size = int(len(b))
-            #append the size 
-            fileHeader = self.constructFileHeader(size, filenames[i]) 
-            filesblob = filesblob + fileHeader + b  #append byte count and that many bytes
+            fblob = self.getFileBlob(filepath, filenames[i])
+            filesblob = filesblob + fblob  #append byte count and that many bytes
         if flags["is_debug_mode"]:
             print("Size of files blob is ", len(filesblob))
         return filesblob
