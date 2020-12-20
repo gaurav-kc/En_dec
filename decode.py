@@ -11,7 +11,7 @@
 
 from blank_template_decode import blankTemplate
 # from your python file, import your class here.
-from lib_decode import myImplementation
+
 from implementation_decode import dec_def_behaviour
 
 from flag_and_args import dec_flags_and_args
@@ -36,8 +36,7 @@ encodeMode, index = def_imp.getEncodeCode(finalBlob)
 lib = None
 if encodeMode == 0: # found that it was encoded with default mode 
     lib = blankTemplate(flags, args)
-if encodeMode == 1: # found that it was encoded with sample mode
-    lib = myImplementation(flags, args)
+
 # add another encode mode here 
 
 if lib is None:

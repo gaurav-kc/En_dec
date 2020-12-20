@@ -10,7 +10,6 @@
 # After the successful execution, a folder will contain all chunks
 
 from blank_template_encode import blankTemplate
-from lib_encode import myImplementation
 # from your python file, import your class here.
 
 from flag_and_args import enc_flags_and_args
@@ -25,8 +24,6 @@ lib = None
 if args["encodeMode"] == 0: # default mode 
     lib = blankTemplate(flags, args)
 # add further modes here
-if args["encodeMode"] == 1: # sample mode
-    lib = myImplementation(flags, args)
     
 if lib is None:
     print("Invalid encode code")
