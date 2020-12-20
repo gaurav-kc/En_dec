@@ -102,7 +102,7 @@ will work.
 -d  (print debugging statements)
 (All necessary details are included in the header itself, so that user need not remember it while decdoding)
 ### Add your implementation
-
+Fork this repository to make changes and make a pull request
 
 [//]: # 
    [git-repo-url]: <https://github.com/gaurav-kc/Enc_dec.git>
