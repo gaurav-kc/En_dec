@@ -97,19 +97,64 @@ class enc_flags_and_args:
                     is_pass_protected = True
                 elif flag == "d":
                     is_debug_mode = True
-                elif flag == "m":
-                    is_encodeMode_given = True
+                # add new flags here 
+                # flags for modes are reamining
+
+                elif flag == "pipc":
+                    i = i + 1
+                    try:
+                        pipelineCode = int(argv[i])
+                    except ValueError:
+                        print("Pipeline code should be an integer")
+                        exit(0)
+                    except IndexError:
+                        print("No value for pipeline code")
+                        exit(0)
+
+                elif flag == "enc":
                     i = i + 1
                     try:
                         encodeMode = int(argv[i])
                     except ValueError:
-                        print("Encode mode should be an integer")
+                        print("enc flag expects an integer only as argument")
                         exit(0)
                     except IndexError:
-                        print("No mode given")
+                        print("No value for encode Mode")
                         exit(0)
-                # add new flags here 
-                # flags for modes are reamining
+
+                elif flag == "crypt":
+                    i = i + 1
+                    try:
+                        encryptMode = int(argv[i])
+                    except ValueError:
+                        print("Encryption code should be an integer")
+                        exit(0)
+                    except IndexError:
+                        print("No value for encryption mode")
+                        exit(0)
+                
+                elif flag == "phc":
+                    i = i + 1
+                    try:
+                        primaryHeaderMode = int(argv[i])
+                    except ValueError:
+                        print("Primary header mode should be an integer")
+                        exit(0)
+                    except IndexError:
+                        print("No value for primary header mode")
+                        exit(0)
+                
+                elif flag == "fhc":
+                    i = i + 1
+                    try:
+                        fileHeaderMode = int(argv[i])
+                    except ValueError:
+                        print("File header mode should be an integer")
+                        exit(0)
+                    except IndexError:
+                        print("No value for file header mode")
+                        exit(0)
+
                 else:
                     print("Invalid flag ",flag)
                     exit(0)
