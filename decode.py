@@ -24,23 +24,19 @@ flags, args = faa.getFlagsAndArgs(sys.argv)
 
 # bt first we need to get the pipeline code
 cmf = commonFunctions(flags, args)
-# dec_def_behaviour is called as the starting process remains same
-# first, identify all chunks, combine and form a big blob and then get encode mode.
-# getting encode mode first is important as further tasks like decoding header, file decoding and decrypting mechanisms depend upon it.
-
-# first identify how many files in the folder we identify as chunks. Get the count 
-chunkcount = cmf.identifyChunks()
-# constrct the entire blob, combined all chunks
-finalBlob = cmf.constructBlob(chunkcount)
-# extract encodeMode and get index (pointer to the byte where header will start) for blob
-pipeLineCode, index = cmf.readPipelineCode(finalBlob)
+# extract pipeLineCode and get index (pointer to the byte where header will start) for blob
+fblob, pipeLineCode, index = cmf.readPipelineCode()
 lib = None
 
 if pipeLineCode == 0:
     lib = dec_def_behaviour(flags, args)
-    # now the lib object is the object of class corresponding to the encode mode
-    index = lib.setArgs(index, finalBlob)
-    # decode the header and extract values from header
+    # set the mode values as per the values in first block
+    index = lib.setArgs(index, fblob)
+    # first identify how many files in the folder we identify as chunks. Get the count 
+    chunkcount = lib.identifyChunks()
+    # constrct the entire blob, combined all chunks
+    finalBlob = lib.constructBlob(chunkcount)
+    # now that we have full blob, get the header information
     header, index = lib.decodeHeader(finalBlob, index)
     # check if password was there
     lib.checkPassword(header)

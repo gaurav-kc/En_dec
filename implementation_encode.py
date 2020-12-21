@@ -14,6 +14,12 @@ class enc_def_behaviour():
         self.primary_header = primary_header(flags, args, self)
         self.blob_encrpytion = blob_encrpytion(flags, args, self)
         self.universal = commonFunctions(flags, args)
+    
+    def getPipelineBytes(self):
+        pipelineCode = self.args["pipelineCode"]
+
+        pipelineCode = pipelineCode.to_bytes(self.args["_pipeline_code_size"],self.args["_endian"])
+        return pipelineCode    
 
     def encrypt(self,blob):
         # function called when a blob has to be encrypted

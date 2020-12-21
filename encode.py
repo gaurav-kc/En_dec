@@ -27,7 +27,7 @@ if args["pipelineCode"] == 0: # default mode
     # get the metainformation like count of files, filenames, from the input folder
     MetaInformation = lib.getMetaInformation()
     # get the pipeline code in the byte format 
-    pipelineC = cmf.getPipelineBytes()
+    pipelineC = lib.getPipelineBytes()
     # get the modes encoded in bytes 
     modeCode = lib.getModeBytes()
     # construct the header for the blob. The header will be appended after encodeMode
