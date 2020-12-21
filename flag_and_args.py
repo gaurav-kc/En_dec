@@ -14,7 +14,11 @@ class enc_flags_and_args:
         doc_formats = ["docx","odt","xlsx","ots","pptx","odf"]
         prog_formats = ["cpp","java","c","py"]
         finalformatlist = []
-        encodeMode = 0  # default mode is 0
+        pipelineCode = 0
+        encodeMode = 0
+        encryptMode = 0
+        primaryHeaderMode = 0
+        fileHeaderMode = 0
         # flags 
         # currently supported flags. (Input and output directory doesn't need any flag. order doenst matter. Flags and directories can be any order. All are optional)
         # anywhere, first directory name is assumed as input directory name and next as output directory name 
@@ -105,6 +109,7 @@ class enc_flags_and_args:
                         print("No mode given")
                         exit(0)
                 # add new flags here 
+                # flags for modes are reamining
                 else:
                     print("Invalid flag ",flag)
                     exit(0)
@@ -137,7 +142,11 @@ class enc_flags_and_args:
         args["key"] = key
         args["current_dir"] = current_dir
         args["finalformatlist"] = finalformatlist
+        args["pipelineCode"] = pipelineCode
         args["encodeMode"] = encodeMode
+        args["encryptMode"] = encryptMode
+        args["primaryHeaderMode"] = primaryHeaderMode
+        args["fileHeaderMode"] = fileHeaderMode
         #anywhere access arguments or flags via this dictionary now
         return flags, args
         
@@ -148,6 +157,11 @@ class dec_flags_and_args:
         ip_directory_name = "encrypted"
         op_directory_name = "decrypted"
         current_dir = "./"
+        pipelineCode = 0
+        encodeMode = 0
+        encryptMode = 0
+        primaryHeaderMode = 0
+        fileHeaderMode = 0
         # presence of default password shows no password was given 
 
         # user need not remember whatever custom/default chunk value and key was used while encrypting. Hence no flags for that
@@ -190,7 +204,12 @@ class dec_flags_and_args:
         args["ip_directory_name"] = ip_directory_name
         args["op_directory_name"] = op_directory_name
         args["current_dir"] = current_dir
-        
+        args["pipelineCode"] = pipelineCode
+        args["encodeMode"] = encodeMode
+        args["encryptMode"] = encryptMode
+        args["primaryHeaderMode"] = primaryHeaderMode
+        args["fileHeaderMode"] = fileHeaderMode
+
         return flags, args
 
     
@@ -210,7 +229,12 @@ class commonArgs:
         _encode_mode_size = 1
         _filename_size = 64
         _date_time = 32
-        
+        _encode_mode_size = 1
+        _encrypt_mode_size = 1
+        _primary_header_mode_size = 1
+        _file_header_mode_size = 1
+        _pipeline_code_size = 1
+
         flags = {}
         args = {}
         args["_commonname"] = _commonname
@@ -225,4 +249,9 @@ class commonArgs:
         args["_encode_mode_size"] = _encode_mode_size
         args["_filename_size"] = _filename_size
         args["_date_time"] = _date_time
+        args["_encode_mode_size"] = _encode_mode_size
+        args["_encrypt_mode_size"] = _encrypt_mode_size
+        args["_primary_header_mode_size"] = _primary_header_mode_size
+        args["_file_header_mode_size"] = _file_header_mode_size
+        args["_pipeline_code_size"] = _pipeline_code_size
         return flags, args

@@ -101,13 +101,16 @@ will work.
 #### Usages of decode.py
 -d  (print debugging statements)
 (All necessary details are included in the header itself, so that user need not remember it while decdoding)
-### Add your implementation
+### Add your implementation or solve an issue 
+(Look at issues here : https://github.com/gaurav-kc/Enc_dec/issues )
+(Look at TODOs here : https://github.com/gaurav-kc/Enc_dec/wiki/TODOs )
+
 Follow the steps:
-* Fork this repository to make changes and make a pull request
-* Clone it on your computer
+* Fork this repository
+* Clone the forked repo on your computer
 * Make some changes
-* Make a commit
-* Push the changes
+* Make a commit on your repo
+* Push the changes to your repo
 * Create a pull request
 
 [//]: # 

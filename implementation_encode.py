@@ -1,40 +1,37 @@
 import hashlib
 import os
-
+from file_encode_types import file_enocde_mode
+from file_header_types import file_header
+from primary_header_types import primary_header
+from encrypt_types import blob_encrpytion
+from universal import commonFunctions
 class enc_def_behaviour(): 
     def __init__(self, flags, args):
         self.flags = flags
         self.args = args
+        self.file_enocde_mode = file_enocde_mode(flags, args, self)
+        self.file_header = file_header(flags, args, self)
+        self.primary_header = primary_header(flags, args, self)
+        self.blob_encrpytion = blob_encrpytion(flags, args, self)
+        self.universal = commonFunctions(flags, args)
 
-    def initialize(self, flags, args):
-        self.flags = flags
-        self.args = args
-
-    def encrypt(self,b):
+    def encrypt(self,blob):
         # function called when a blob has to be encrypted
         # by default, this is simple byte level encryption where we add key to byte and take % 256 as byte as 0-255 range
-        for i in range(0,len(b)):
-            b[i] = (b[i] + self.args["key"])%256
-        return b
+        blob = self.blob_encrpytion.encrypt(self.args["encryptMode"], blob)
+        return blob
     
     def encodeFile(self, filepath, filename):
         # function takes a filepath and name as args. Here, we can encode a particular file as per format to compress it 
         # or make it robust or for any other purpose
-        with open(filepath,"rb") as temp_file:
-            f = temp_file.read()
-            b = bytearray(f)
-            # by default does nothing
-            return b
+        blob = self.file_enocde_mode.encodeFile(self.args["encodeMode"], filepath, filename)
+        return blob
 
     def getDecryptionKey(self):
         # in this function, by default we have to return the corresponding decryption key to your encryption key
         # this is important as decryption key is included in header while encrypting
         # by default the decryption key is 256 - encrpytion key
-        key = self.args["key"]
-        if key<0 or key>256:
-            print("Key has to be between 0 to 256")
-            exit(0)
-        dec_key = 256 - key
+        dec_key = self.blob_encrpytion.getDecryptionKey(self.args["encryptMode"])
         return dec_key
 
     def getMetaInformation(self):
@@ -88,54 +85,15 @@ class enc_def_behaviour():
             filenames.append(tfile)
         return filenames
 
-    def getEncodeMode(self):
-        # this function returns the encodeMode number in bytearray form
-        encodeMode = self.args["encodeMode"]
-        encodeMode = encodeMode.to_bytes(self.args["_encode_mode_size"],self.args["_endian"])
-        return encodeMode
-
-    def constructHeader(self, MetaInformation, encodeMode):
+    def constructHeader(self, MetaInformation):
         # using the metainformation, flags and arguments, this function constructs the primary header.
         # the header is appended after encodeMode
-        filecount = MetaInformation["filecount"]
-        args = self.args
-        flags = self.flags
-
-        if filecount == 0:
-            print("Nothing to encrpyt")
-            return 
-        if flags["is_debug_mode"]:
-            print("File count is ",filecount)
-        
-        header = bytearray()  # this will have the entire header
-        files_count = filecount.to_bytes(args["_filecount_size"], args["_endian"])   #conv to bytearray
-        dec_key = self.getDecryptionKey()
-        key_bytes = dec_key.to_bytes(args["_dec_key_size"],args["_endian"]) #conv to bytearray
-        password = args["_default_password"]
-        # we have to ask for password only when -p flag is specified
-        if flags["is_pass_protected"] == True:
-            print("Enter password")
-            password = input()
-            if len(password) == 0:
-                print("No password given. Creating unprotected files..")
-            else:
-                password = password.strip(" ")
-                password = password.strip("\n")
-        password = self.getPassHash(password)
-        
-        header = files_count + key_bytes + password
-        # append header to the encodemode
-        header = encodeMode + header
+        header = self.primary_header.constructHeader(self.args["primaryHeaderMode"], MetaInformation)
         return header
 
     def constructFileHeader(self, size, filename):
         # with the argument provided, this function creates file header for a particular file
-        fileHeader = bytearray()
-        size = size.to_bytes(self.args["_cs_size"],self.args["_endian"])
-        fileHeader = fileHeader + size
-        filename = filename.ljust(self.args["_filename_size"], ";")
-        filename = bytearray(filename,'utf-8')
-        fileHeader = fileHeader + filename
+        fileHeader = self.file_header.constructFileHeader(self.args["fileHeaderMode"], size, filename)
         return fileHeader
 
     def getFileBlob(self, filepath, filename):
@@ -152,7 +110,7 @@ class enc_def_behaviour():
         fblob = fileHeader + b
         return fblob
 
-    def constructBlob(self, MetaInformation):
+    def constructFilesBlob(self, MetaInformation):
         # this function reads each file, encodes it, encrypts it and adds the blobs of all the files and returns it.
         args = self.args
         flags = self.flags
@@ -210,7 +168,7 @@ class enc_def_behaviour():
             choice = input()
             if choice != "y":
                 exit(0)
-        encryptedFilenames = self.getEncryptedFilenames(len(chunk_array))
+        encryptedFilenames = self.universal.getEncryptedFilenames(len(chunk_array))
         if flags["is_debug_mode"]:
             print(len(encryptedFilenames), " chunks will be created")
         for chunkNumber in range(0,len(chunk_array)):
@@ -237,22 +195,25 @@ class enc_def_behaviour():
                 os.remove(chunkname)
             except FileNotFoundError:
                 print("Did not find ",chunkname)
+
+    def getModeBytes(self):
+        encodeMode = self.args["encodeMode"]
+        encryptMode = self.args["encryptMode"]
+        primaryHeaderMode = self.args["primaryHeaderMode"]
+        fileHeaderMode = self.args["fileHeaderMode"]
+
+        encodeMode = encodeMode.to_bytes(self.args["_encode_mode_size"],self.args["_endian"])
+        encryptMode = encryptMode.to_bytes(self.args["_encrypt_mode_size"],self.args["_endian"])
+        primaryHeaderMode = primaryHeaderMode.to_bytes(self.args["_primary_header_mode_size"],self.args["_endian"])
+        fileHeaderMode = fileHeaderMode.to_bytes(self.args["_file_header_mode_size"],self.args["_endian"])
+
+        modeBytes = encodeMode + encryptMode + primaryHeaderMode + fileHeaderMode
+        return modeBytes
  
-    # these functions (below this line) should be present in both and must be exactly same
     def getPassHash(self,password):
         # this function is called when a password has to be hashed
         # by default we use sha1 to hash the password
+        # make sure you use same algo while decrypting
         dig = hashlib.sha1(password.encode())
         return dig.digest()
     
-    def getEncryptedFilenames(self, chunkcount):
-        # here is the file naming logic. By default, list of filenames for chunks is a function of chunkcount.
-        # if you implement your own logic (say you don't want filenames to appear serially due to <filename>_0 , override this function, but make sure that 
-        # the function does not use randomization. For eg, getEncryptedFilenames(5), should always return same list of names. This is required as we need the
-        # same list when we have to identify the chunks)
-        args = self.args
-        chunk_names = []
-        for i in range(0, chunkcount):
-            chunkname = args["_commonname"] + args["_delimeter"] + str(i) + "." + args["_opformat"]
-            chunk_names.append(chunkname)
-        return chunk_names
