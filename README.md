@@ -103,6 +103,7 @@ will work.
 (All necessary details are included in the header itself, so that user need not remember it while decdoding)
 ### Add your implementation or solve an issue 
 (Look at issues here : https://github.com/gaurav-kc/Enc_dec/issues )
+
 (Look at TODOs here : https://github.com/gaurav-kc/Enc_dec/wiki/TODOs )
 
 Follow the steps:
