@@ -1,3 +1,4 @@
+# this file is to implement functios which are common. irrespective of mode or any customizations. 
 import os
 class commonFunctions():
     def __init__(self, flags, args):

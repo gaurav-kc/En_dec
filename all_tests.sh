@@ -1,6 +1,6 @@
 echo "Cleaning directories if they exists"
 ./clean.sh
-
+# this program is to make some tests to check if the encoding and decoding is working or not
 echo -e "\n\n **** Starting tests **** \n"
 echo "Running test 1. No args given"
 python3 encode.py -d

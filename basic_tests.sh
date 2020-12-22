@@ -1,6 +1,6 @@
 echo "Cleaning directories if they exists"
 ./clean.sh
-
+# this file skips the test where documents are classified into images videos etc
 echo -e "\n\n **** Starting tests **** \n"
 echo "Running test 1. No args given"
 python3 encode.py -d

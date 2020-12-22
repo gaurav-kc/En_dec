@@ -1,3 +1,9 @@
+# this file is to handle various implementations of primary header
+# create an object of class primary_header and call constructHeader and decodeHeader with mode value 
+# Also, while creating the object for class primary_header, there params need to be given
+# 1. flags -> for code to get access to any flags 
+# 2. args -> for code to get access to args 
+# 3. self -> (reference to self) which is required to call any function which is present in the caller class
 class primary_header():
     def __init__(self, flags, args, caller):
         self.flags = flags

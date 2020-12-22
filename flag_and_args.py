@@ -1,6 +1,7 @@
 # this class is to handle the flags and set the arguments
 # with the flags and args as a dictionary, it becomes easy to add flags or arguments and access it anywhere in other files.
-
+# there are 2 classes. enc_flags_and_args and dec_flags_and_args. Respective objects have to be create in respective files 
+# create an object and pass the argv and let the class create a dictionary of flags and arguments 
 class enc_flags_and_args:
     def getFlagsAndArgs(self,argv):
         # default values 

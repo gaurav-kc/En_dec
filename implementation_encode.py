@@ -1,5 +1,7 @@
+# this file handles the default encoding pipeline implementation
 import hashlib
 import os
+
 from file_encode_types import file_enocde_mode
 from file_header_types import file_header
 from primary_header_types import primary_header

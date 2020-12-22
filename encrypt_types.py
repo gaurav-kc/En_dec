@@ -1,3 +1,11 @@
+# this file is to handle various encryption schemes based upon the mode 
+# in the pipeline, create an object of class blob_encrpytion and call encrypt and decrypt functions with mode
+# as per the value of mode, appropriate encryption and decryption class will be called
+# Also, while creating the object for class blob_encrpytion, there params need to be given
+# 1. flags -> for code to get access to any flags 
+# 2. args -> for code to get access to args 
+# 3. self -> (reference to self) which is required to call any function which is present in the caller class
+
 class blob_encrpytion:
     def __init__(self, flags, args, caller):
         self.flags = flags

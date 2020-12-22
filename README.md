@@ -98,6 +98,12 @@ python3 encode.py -cs 1000000 my_dir -k 89 chunks_dir -d -p
 ```
 will work.
 
+There are some flags to make it possible to do these task with more customizations. (Not yet implemented)
+* -pipc <pipeline code> by default it is 0. (No other pipeline implemented yet)
+* -enc <file encoding mode> by default it is 0. (No other mode is implemented yet. Can be used to compress or make robust storage and recovery)
+* -crypt <file encryption mode> by default it is 0. (No other pipeline implemented yet. Can be used to use various encryption schemes)
+* -phc <primary header mode> by default it is 0. (No other pipeline implemented yet. Can be used to make header store other details)
+* -fhc <file header mode> by default it is 0. (No other pipeline implemented yet. Can be used to make file header store more details)
 #### Usages of decode.py
 -d  (print debugging statements)
 (All necessary details are included in the header itself, so that user need not remember it while decdoding)
