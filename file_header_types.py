@@ -10,12 +10,12 @@ class file_header():
         self.args = args
         self.caller = caller
 
-    def constructFileHeader(self, mode, size, filename): 
+    def constructFileHeader(self, mode, size, filepath): 
         fileHeader = None
         if mode == 0:
             consFileHeader = default_mode(self.flags, self.args)
             try:
-                fileHeader = consFileHeader.constructFileHeader(size, filename, self.caller)
+                fileHeader = consFileHeader.constructFileHeader(size, filepath, self.caller)
             except NotImplementedError:
                 print("Function to construct file header is not defined")
         if fileHeader is None:
@@ -40,14 +40,15 @@ class default_mode():
         self.flags = flags
         self.args = args
 
-    def constructFileHeader(self, size, filename, caller):
+    def constructFileHeader(self, size, filepath, caller):
             # with the argument provided, this function creates file header for a particular file
             fileHeader = bytearray()
             size = size.to_bytes(self.args["_cs_size"],self.args["_endian"])
             fileHeader = fileHeader + size
-            filename = filename.ljust(self.args["_filename_size"], ";")
-            filename = bytearray(filename,'utf-8')
-            fileHeader = fileHeader + filename
+            filepath = str(filepath)
+            filepath = filepath.ljust(self.args["_filepath_size"], ";")
+            filepath = bytearray(filepath,'utf-8')
+            fileHeader = fileHeader + filepath
             return fileHeader
     
     def getFileHeader(self, finalBlob, index, caller):
@@ -59,13 +60,13 @@ class default_mode():
             index = index + 1
         filesize = int.from_bytes(filesize, byteorder=self.args["_endian"])
         # get other file header info here
-        filename = bytearray()
-        for _ in range(0,self.args["_filename_size"]):
-            filename.append(finalBlob[index])
+        filepath = bytearray()
+        for _ in range(0,self.args["_filepath_size"]):
+            filepath.append(finalBlob[index])
             index = index + 1
-        filename = filename.decode("utf-8")
-        filename = filename.split(";")
-        filename = filename[0]
+        filepath = filepath.decode("utf-8")
+        filepath = filepath.split(";")
+        filepath = filepath[0]
         fileHeader["filesize"] = filesize
-        fileHeader["filename"] = filename
+        fileHeader["filepath"] = filepath
         return fileHeader, index

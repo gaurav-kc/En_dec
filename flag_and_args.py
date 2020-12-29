@@ -9,11 +9,11 @@ class enc_flags_and_args:
         op_directory_name = "encrypted"     #if not given, put encrypted files in this folder
         chunksize = 100000   # if not given, consider these many bytes as chunk size
         key = 56    # if not given, consider this value as key for your encryption algorithm
-        current_dir = "./"
-        image_formats = ["jpg","png","jpeg","tiff","gif"] 
-        video_formats = ["mp4","mov","mkv","flv"]
-        doc_formats = ["docx","odt","xlsx","ots","pptx","odf"]
-        prog_formats = ["cpp","java","c","py"]
+        current_dir = "."
+        image_formats = [".jpg",".png",".jpeg",".tiff",".gif"] 
+        video_formats = [".mp4",".mov",".mkv",".flv"]
+        doc_formats = [".docx",".odt",".xlsx",".ots",".pptx",".odf"]
+        prog_formats = [".cpp",".java",".c",",py"]
         finalformatlist = []
         pipelineCode = 0
         encodeMode = 0
@@ -202,7 +202,7 @@ class dec_flags_and_args:
         # default values
         ip_directory_name = "encrypted"
         op_directory_name = "decrypted"
-        current_dir = "./"
+        current_dir = "."
         pipelineCode = 0
         encodeMode = 0
         encryptMode = 0
@@ -273,7 +273,7 @@ class commonArgs:
         _dec_key_size = 4
         _pass_size = 20
         _encode_mode_size = 1
-        _filename_size = 64
+        _filepath_size = 256
         _date_time = 32
         _encode_mode_size = 1
         _encrypt_mode_size = 1
@@ -293,7 +293,7 @@ class commonArgs:
         args["_dec_key_size"] = _dec_key_size
         args["_pass_size"] = _pass_size
         args["_encode_mode_size"] = _encode_mode_size
-        args["_filename_size"] = _filename_size
+        args["_filepath_size"] = _filepath_size
         args["_date_time"] = _date_time
         args["_encode_mode_size"] = _encode_mode_size
         args["_encrypt_mode_size"] = _encrypt_mode_size

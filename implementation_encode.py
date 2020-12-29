@@ -1,6 +1,6 @@
 # this file handles the default encoding pipeline implementation
 import hashlib
-import os
+from pathlib import Path
 
 from file_encode_types import file_enocde_mode
 from file_header_types import file_header
@@ -29,10 +29,10 @@ class enc_def_behaviour():
         blob = self.blob_encrpytion.encrypt(self.args["encryptMode"], blob)
         return blob
     
-    def encodeFile(self, filepath, filename):
+    def encodeFile(self, filepath):
         # function takes a filepath and name as args. Here, we can encode a particular file as per format to compress it 
         # or make it robust or for any other purpose
-        blob = self.file_enocde_mode.encodeFile(self.args["encodeMode"], filepath, filename)
+        blob = self.file_enocde_mode.encodeFile(self.args["encodeMode"], filepath)
         return blob
 
     def getDecryptionKey(self):
@@ -48,49 +48,47 @@ class enc_def_behaviour():
         args = self.args
         flags = self.flags
         MetaInformation = {}
-        real_pathname = os.path.join(args["current_dir"],args["ip_directory_name"])
+        real_pathname = Path(args["current_dir"]).joinpath(args["ip_directory_name"])
         #check input directory name is correct or not 
-        isdirectory = os.path.isdir(real_pathname)
-        if not isdirectory:
+        if not real_pathname.is_dir():
             print(args["ip_directory_name"]," not found")
             exit(-1)
         if flags["is_debug_mode"]:
-            print("Looking for files in ",real_pathname)
-        filenames = self.getFilenames(real_pathname)    # function call to get only those filenames which we are cosidering
+            print("Looking for files in ",str(real_pathname))
+        filenames = self.getFilenamesWithFullPath(real_pathname)    # function call to get only those filenames which we are cosidering
         filecount = len(filenames)
         MetaInformation["filecount"] = filecount
         MetaInformation["filenames"] = filenames
     
         return MetaInformation
         
-    def getFilenames(self, path):
+    def getFilenamesWithFullPath(self, path):
         # this function returns a list of only those filenames which have format of our use in the directory at the path 
-        tfile_names = os.listdir(path)
         filenames = []
         finalformatlist = self.args["finalformatlist"]
-        #analyze these names of files in directory
-        for tfile in tfile_names:
-            if len(tfile) >= self.args["_filename_size"]:
-                print("Filename ",tfile,"too large. Skipping it.")
+        for tfile in path.iterdir():
+            # is it a directory?
+            if tfile.is_dir():
+                inner_list = self.getFilenamesWithFullPath(tfile)
+                for afile in inner_list:
+                    filenames.append(afile)
                 continue
-            temp = tfile.split(".")
-            #only one dot is allowed in filename
-            if len(temp) != 2:
-                print("Incorrect format ",tfile, " skipping it.")
-                continue
-            #check for delimeter
-            temp1 = tfile.split(";")
-            if len(temp1) != 1:
-                print("; found in ",tfile," which is not allowed")
-                continue
-            format = temp[1]
-            #check if file has format in our list
-            if len(finalformatlist) > 0:
-                if format not in finalformatlist:
-                    if not self.flags["is_warning_suppressed"]:
-                        print("Excluding file ",tfile)
+            # is it a file?
+            if tfile.is_file() and not tfile.is_symlink():
+                # returns true for regular file and symbolic link to a regular file for now let's ignore links
+                temp1 = tfile.name.split(";")
+                if len(temp1) > 1:
+                    print("; found in ",tfile.name," which is not allowed. fgSkipping")
                     continue
-            filenames.append(tfile)
+                format = tfile.suffix
+                if len(finalformatlist) > 0:
+                    if format not in finalformatlist:
+                        if not self.flags["is_warning_suppressed"]:
+                            print("Excluding file ",tfile)
+                        continue
+                filenames.append(tfile)
+                continue
+            print("Skipping ",tfile.name)    
         return filenames
 
     def constructHeader(self, MetaInformation):
@@ -99,22 +97,22 @@ class enc_def_behaviour():
         header = self.primary_header.constructHeader(self.args["primaryHeaderMode"], MetaInformation)
         return header
 
-    def constructFileHeader(self, size, filename):
+    def constructFileHeader(self, size, filepath):
         # with the argument provided, this function creates file header for a particular file
-        fileHeader = self.file_header.constructFileHeader(self.args["fileHeaderMode"], size, filename)
+        fileHeader = self.file_header.constructFileHeader(self.args["fileHeaderMode"], size, filepath)
         return fileHeader
 
-    def getFileBlob(self, filepath, filename):
+    def getFileBlob(self, filepath):
         #encodeFile function can be used to encode the file as per format
         #for example, use an auto encoder to compress an image. And use that compressed representation to store that image
         #similarly, pdfs and other formatted files can be modified to either compress or have some meta info for recovery etc
-        b = self.encodeFile(filepath, filename)
+        b = self.encodeFile(filepath)
         #the bytes should be encrypted. Right now it uses byte level encryption and simply adds key and takes % 256. (as a byte is 0-255)
         #you can implement various encrpytion algorithms. Even on groups of bytes. Key is given 4Bytes in header but can be dec/inc as per req
         b = self.encrypt(b)
         size = int(len(b))
         #append the size 
-        fileHeader = self.constructFileHeader(size, filename) 
+        fileHeader = self.constructFileHeader(size, filepath) 
         fblob = fileHeader + b
         return fblob
 
@@ -126,8 +124,8 @@ class enc_def_behaviour():
         filenames = MetaInformation["filenames"]
         filesblob = bytearray()
         for i in range(0,len(filenames)):
-            filepath = os.path.join(args["current_dir"],args["ip_directory_name"],filenames[i])
-            fblob = self.getFileBlob(filepath, filenames[i])
+            filepath = Path(args["current_dir"]).joinpath(filenames[i])
+            fblob = self.getFileBlob(filepath)
             filesblob = filesblob + fblob  #append byte count and that many bytes
         if flags["is_debug_mode"]:
             print("Size of files blob is ", len(filesblob))
@@ -164,11 +162,11 @@ class enc_def_behaviour():
         # this function will save each chunk from the list of chunks as a file 
         args = self.args
         flags = self.flags
-        output_direc = os.path.join(args["current_dir"],args["op_directory_name"])
+        output_direc = Path(args["current_dir"]).joinpath(args["op_directory_name"])
         # check if the output directory exists
-        if not os.path.exists(output_direc):
-            os.mkdir(output_direc)
-        else:
+        try:
+            output_direc.mkdir(parents=True)
+        except FileExistsError:
             #if it does, we show a warning 
             print("The destination folder exists. All Files will be safe")
             print("In case, same named files are already there, operation will be aborted")
@@ -180,8 +178,8 @@ class enc_def_behaviour():
         if flags["is_debug_mode"]:
             print(len(encryptedFilenames), " chunks will be created")
         for chunkNumber in range(0,len(chunk_array)):
-            chunkname = os.path.join(output_direc,encryptedFilenames[chunkNumber])
-            if os.path.exists(chunkname) == True:
+            chunkname = output_direc.joinpath(encryptedFilenames[chunkNumber])
+            if chunkname.exists():
                 # The file already exists. Even if we overwrite, the but we are not able to overwrite all chunks,
                 # while decrypting it will be error
                 # best is to roll back. We could have halted but then incomplete chunks will exist 
@@ -196,11 +194,11 @@ class enc_def_behaviour():
         # a function to roll back changes used in the loop later
         # say in the destination directory, we find an existing chunk
         # then we have to roll back changes 
-        output_direc = os.path.join(self.args["current_dir"],self.args["op_directory_name"])
+        output_direc = Path(self.args["current_dir"]).joinpath(self.args["op_directory_name"])
         for i in range(0,chunkNumber):
-            chunkname = os.path.join(output_direc,encryptedFilenames[i])
+            chunkname = output_direc.joinpath(encryptedFilenames[i])
             try:
-                os.remove(chunkname)
+                chunkname.unlink()
             except FileNotFoundError:
                 print("Did not find ",chunkname)
 

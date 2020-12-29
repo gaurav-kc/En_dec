@@ -1,7 +1,8 @@
 # this file handles the default decoding pipeline implementation.
 
 import hashlib
-import os
+from pathlib import Path            # path is used to do operations where file system needs to be accessed. For eg checking if a file exists or reading/writing a file
+# most of the operations can be done even with os.path but it is better to use Purepath and path
 
 from file_encode_types import file_enocde_mode
 from file_header_types import file_header
@@ -22,17 +23,23 @@ class dec_def_behaviour():
         # this function is to get the count of chunks in input folder.
         args = self.args
         flags = self.flags
-        dir_path = os.path.join(args["current_dir"],args["ip_directory_name"])
-        if not os.path.exists(dir_path):
+        # dir_path = os.path.join(args["current_dir"],args["ip_directory_name"])
+        dir_path = Path(args["current_dir"]).joinpath(args["ip_directory_name"])
+        if not dir_path.exists():
             print("Directory not found")
             exit(0)
         if flags["is_debug_mode"]:
             print("Looking for files in ",dir_path)
         # this step is to count the chunks and avoid all other files apart from what we recognize as chunk
-        all_files = os.listdir(dir_path)
+        # all_files = os.listdir(dir_path)
+        # chunkcount = 0
+        # for afile in all_files:
+        #     if self.isChunk(afile): # function call to identify a filename as chunk
+        #         chunkcount = chunkcount + 1
         chunkcount = 0
-        for afile in all_files:
-            if self.isChunk(afile): # function call to identify a filename as chunk
+        for afile in dir_path.iterdir():
+            filename = afile.name
+            if self.isChunk(filename):
                 chunkcount = chunkcount + 1
         if chunkcount == 0:
             print("No compatible files found")
@@ -58,14 +65,15 @@ class dec_def_behaviour():
         flags = self.flags
         # to get the chunk names
         encryptedFilenames = self.universal.getEncryptedFilenames(chunkcount)
-        dir_path = os.path.join(args["current_dir"],args["ip_directory_name"])
+        # dir_path = os.path.join(args["current_dir"],args["ip_directory_name"])
+        dir_path = Path(args["current_dir"]).joinpath(args["ip_directory_name"])
         finalBlob = bytearray()
         for i in range(0, chunkcount):
-            filename = os.path.join(dir_path, encryptedFilenames[i])
-            if not os.path.exists(filename):
-                print(filename, " not found")
+            filepath = dir_path.joinpath(encryptedFilenames[i])
+            if not filepath.exists():
+                print(str(filepath), " not found")
                 exit(0) # bilkul ricks nai lene ka
-            file_obj = open(filename,"rb")
+            file_obj = open(filepath,"rb")
             f = file_obj.read()
             b = bytearray(f)
             finalBlob = finalBlob + b     # append bytearray of current file to finalBlob
@@ -80,10 +88,10 @@ class dec_def_behaviour():
         blob = self.blob_encrpytion.decrypt(self.args["encryptMode"], blob, key)
         return blob
     
-    def decodeFile(self, fileblob, filename, fileHeader):
+    def decodeFile(self, fileblob, filepath, fileHeader):
         # this function is called when a fileblob has to be decoded. The filename is to get the format and decode blob accordingly.
         # by default does nothing
-        fileblob = self.file_enocde_mode.decodeFile(self.args["encodeMode"], fileblob, filename, fileHeader)
+        fileblob = self.file_enocde_mode.decodeFile(self.args["encodeMode"], fileblob, filepath, fileHeader)
         return fileblob
 
     def decodeHeader(self,finalBlob, index):
@@ -150,11 +158,11 @@ class dec_def_behaviour():
         args = self.args
         # flags = self.flags
         key = header["key"]
-        opdir_path = os.path.join(args["current_dir"],args["op_directory_name"])
+        opdir_path = Path(args["current_dir"]).joinpath(args["op_directory_name"])
         # check if destination directory exists
-        if not os.path.exists(opdir_path):
-            os.mkdir(opdir_path)
-        else:
+        try:
+            opdir_path.mkdir(parents=True)
+        except FileExistsError:
             #if it does, we show a warning 
             print("The destination folder exists. All Files will be safe")
             print("In case, same named files are already there, you will be warned")
@@ -164,20 +172,25 @@ class dec_def_behaviour():
                 exit(0)
         for i in range(0, len(filesInfoList)):
             fileHeader = filesInfoList[i]["fileHeader"]
-            filename = fileHeader["filename"]
-            filepath = os.path.join(opdir_path, filename)
+            filepath = fileHeader["filepath"]
+            filepath = opdir_path.joinpath(filepath)
             # check if file exists 
-            if os.path.exists(filepath):
-                print("The file ",filename, " already exists. Overwrite it? y/n")
+            try:
+                parent = filepath.parent
+                parent.mkdir(parents=True, exist_ok=True)
+                filepath.touch(mode=0o777)
+            except FileExistsError:
+                print("The file ",filepath.name, " already exists at ",filepath.parent,". Overwrite it? y/n")
                 choice = input()
                 if choice != "y":
                     # if the file need not be overwritten, create a copy_of_<filename> file
                     print("Creating a copy")
-                    filename = "Copy_of_" + filename
-                    filepath = os.path.join(opdir_path, filename)
+                    actual_filename = filepath.name
+                    actual_filename = "Copy_of_" + actual_filename
+                    filepath = filepath.with_name(actual_filename)
             blob = filesInfoList[i]["blob"]
             blob = self.decrypt(blob, key)
-            blob = self.decodeFile(blob,filename,fileHeader)
+            blob = self.decodeFile(blob,filepath,fileHeader)
             f = open(filepath, "wb")
             f.write(blob)
             f.close() # this is important ;p
