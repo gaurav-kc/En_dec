@@ -10,7 +10,7 @@ python3 decode.py -d
 echo -e "\nResult for test 1 (If empty or only has files which are not in supported formats in encode, then successful)"
 # diff command will check difference in files, and can even detect if any byte is different in files with same name
 # if this is empty, it means all the files matched in two directories. If not, it will show which files not matching.
-diff testit decrypted/testit
+diff -r  testit decrypted/testit
 rm -r encrypted 
 rm -r decrypted
 
@@ -21,7 +21,7 @@ python3 encode.py temp_dir enc_files -d
 python3 decode.py enc_files dec_files -d
 # temp_dir -> enc_files -> dec_files
 echo -e "\nResult for test 2 (If empty or only has files which are not in supported formats in encode, then successful)"
-diff temp_dir dec_files/temp_dir
+diff -r  temp_dir dec_files/temp_dir
 rm -r enc_files
 rm -r dec_files
 
@@ -31,7 +31,7 @@ python3 encode.py temp_dir enc_files -cs 5000000 -k 27 -d
 python3 decode.py enc_files dec_files -d
 # temp_dir -> enc_files -> dec_files
 echo -e "\nResult for test 3 (If empty or only has files which are not in supported formats in encode, then successful)"
-diff temp_dir dec_files/temp_dir
+diff -r  temp_dir dec_files/temp_dir
 rm -r enc_files
 rm -r dec_files
 
@@ -41,7 +41,7 @@ python3 encode.py temp_dir enc_files -cs 5000000 -k 27 -p -d
 python3 decode.py enc_files dec_files -d
 # temp_dir -> enc_files -> dec_files
 echo -e "\nResult for test 4 (If empty or only has files which are not in supported formats in encode, then successful)"
-diff temp_dir dec_files/temp_dir
+diff -r  temp_dir dec_files/temp_dir
 rm -r enc_files
 rm -r dec_files
 

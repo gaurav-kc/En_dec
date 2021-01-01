@@ -3,7 +3,7 @@
 # there are 2 classes. enc_flags_and_args and dec_flags_and_args. Respective objects have to be create in respective files 
 # create an object and pass the argv and let the class create a dictionary of flags and arguments 
 class enc_flags_and_args:
-    def getFlagsAndArgs(self,argv):
+    def getFlagsAndArgs(self,argv,rec_flags=None,rec_args=None):
         # default values 
         ip_directory_name = "testit"   # if not given, expect files in this folder
         op_directory_name = "encrypted"     #if not given, put encrypted files in this folder
@@ -40,136 +40,138 @@ class enc_flags_and_args:
         is_debug_mode = False
         is_warning_suppressed = False
         is_encodeMode_given = False
-        #handling the flags to set/overwrite default values
-        i = 1
-        while i < len(argv):
-            if argv[i][0] == "-":
-                flag = argv[i].lstrip("-")
-                # if flag is cs (chunksize)
-                if flag == "cs":
-                    is_chunk_size = True    
-                    i = i + 1
-                    try:
-                        chunksize = int(argv[i])
-                    except ValueError:
-                        print("Chunk size should be an integer")
-                        exit(0)
-                    except IndexError:
-                        print("No chunk size given")
-                        exit(0)
-                # if flag is k (key)
-                elif flag == "k":
-                    is_key = True
-                    i = i + 1
-                    try:
-                        key = int(argv[i])
-                    except ValueError:
-                        print("Key should be an integer")
-                        exit(0)
-                    except IndexError:
-                        print("No key given")
-                        exit(0)
-                elif flag == "f":
-                    is_format_given = True
-                    i = i + 1
-                    temp = argv[i]
-                    temp = temp.split(",")
-                    for j in temp:
-                        if j == "images":
-                            for imgformat in image_formats:
-                                finalformatlist.append(imgformat)
-                        elif j == "videos":
-                            for vidformat in video_formats:
-                                finalformatlist.append(vidformat)
-                        elif j == "docs":
-                            for docformat in doc_formats:
-                                finalformatlist.append(docformat)
-                        elif j == "prog":
-                            for progformat in prog_formats:
-                                finalformatlist.append(progformat)
-                        # add another category here 
-                        else:
-                            print("Unusual paramter",j,"for -f flag found")
+        #handling the flags to set/overwrite default values using the command line arguments 
+        if argv is not None:
+            i = 1
+            while i < len(argv):
+                if argv[i][0] == "-":
+                    flag = argv[i].lstrip("-")
+                    # if flag is cs (chunksize)
+                    if flag == "cs":
+                        is_chunk_size = True    
+                        i = i + 1
+                        try:
+                            chunksize = int(argv[i])
+                        except ValueError:
+                            print("Chunk size should be an integer")
                             exit(0)
-                    finalformatlist = list(dict.fromkeys(finalformatlist)) # remove duplicates in present
-                elif flag == "sw":
-                    is_warning_suppressed = True
-                elif flag == "p":
-                    is_pass_protected = True
-                elif flag == "d":
-                    is_debug_mode = True
-                # add new flags here 
-                # flags for modes are reamining
+                        except IndexError:
+                            print("No chunk size given")
+                            exit(0)
+                    # if flag is k (key)
+                    elif flag == "k":
+                        is_key = True
+                        i = i + 1
+                        try:
+                            key = int(argv[i])
+                        except ValueError:
+                            print("Key should be an integer")
+                            exit(0)
+                        except IndexError:
+                            print("No key given")
+                            exit(0)
+                    elif flag == "f":
+                        is_format_given = True
+                        i = i + 1
+                        temp = argv[i]
+                        temp = temp.split(",")
+                        for j in temp:
+                            if j == "images":
+                                for imgformat in image_formats:
+                                    finalformatlist.append(imgformat)
+                            elif j == "videos":
+                                for vidformat in video_formats:
+                                    finalformatlist.append(vidformat)
+                            elif j == "docs":
+                                for docformat in doc_formats:
+                                    finalformatlist.append(docformat)
+                            elif j == "prog":
+                                for progformat in prog_formats:
+                                    finalformatlist.append(progformat)
+                            # add another category here 
+                            else:
+                                print("Unusual paramter",j,"for -f flag found")
+                                exit(0)
+                        finalformatlist = list(dict.fromkeys(finalformatlist)) # remove duplicates in present
+                    elif flag == "sw":
+                        is_warning_suppressed = True
+                    elif flag == "p":
+                        is_pass_protected = True
+                    elif flag == "d":
+                        is_debug_mode = True
+                    # add new flags here 
+                    # flags for modes are reamining
 
-                elif flag == "pipc":
-                    i = i + 1
-                    try:
-                        pipelineCode = int(argv[i])
-                    except ValueError:
-                        print("Pipeline code should be an integer")
-                        exit(0)
-                    except IndexError:
-                        print("No value for pipeline code")
-                        exit(0)
+                    elif flag == "pipc":
+                        i = i + 1
+                        try:
+                            pipelineCode = int(argv[i])
+                        except ValueError:
+                            print("Pipeline code should be an integer")
+                            exit(0)
+                        except IndexError:
+                            print("No value for pipeline code")
+                            exit(0)
 
-                elif flag == "enc":
-                    i = i + 1
-                    try:
-                        encodeMode = int(argv[i])
-                    except ValueError:
-                        print("enc flag expects an integer only as argument")
-                        exit(0)
-                    except IndexError:
-                        print("No value for encode Mode")
-                        exit(0)
+                    elif flag == "enc":
+                        i = i + 1
+                        try:
+                            encodeMode = int(argv[i])
+                        except ValueError:
+                            print("enc flag expects an integer only as argument")
+                            exit(0)
+                        except IndexError:
+                            print("No value for encode Mode")
+                            exit(0)
 
-                elif flag == "crypt":
-                    i = i + 1
-                    try:
-                        encryptMode = int(argv[i])
-                    except ValueError:
-                        print("Encryption code should be an integer")
-                        exit(0)
-                    except IndexError:
-                        print("No value for encryption mode")
-                        exit(0)
-                
-                elif flag == "phc":
-                    i = i + 1
-                    try:
-                        primaryHeaderMode = int(argv[i])
-                    except ValueError:
-                        print("Primary header mode should be an integer")
-                        exit(0)
-                    except IndexError:
-                        print("No value for primary header mode")
-                        exit(0)
-                
-                elif flag == "fhc":
-                    i = i + 1
-                    try:
-                        fileHeaderMode = int(argv[i])
-                    except ValueError:
-                        print("File header mode should be an integer")
-                        exit(0)
-                    except IndexError:
-                        print("No value for file header mode")
-                        exit(0)
+                    elif flag == "crypt":
+                        i = i + 1
+                        try:
+                            encryptMode = int(argv[i])
+                        except ValueError:
+                            print("Encryption code should be an integer")
+                            exit(0)
+                        except IndexError:
+                            print("No value for encryption mode")
+                            exit(0)
+                    
+                    elif flag == "phc":
+                        i = i + 1
+                        try:
+                            primaryHeaderMode = int(argv[i])
+                        except ValueError:
+                            print("Primary header mode should be an integer")
+                            exit(0)
+                        except IndexError:
+                            print("No value for primary header mode")
+                            exit(0)
+                    
+                    elif flag == "fhc":
+                        i = i + 1
+                        try:
+                            fileHeaderMode = int(argv[i])
+                        except ValueError:
+                            print("File header mode should be an integer")
+                            exit(0)
+                        except IndexError:
+                            print("No value for file header mode")
+                            exit(0)
 
+                    else:
+                        print("Invalid flag ",flag)
+                        exit(0)
                 else:
-                    print("Invalid flag ",flag)
-                    exit(0)
-            else:
-                if is_input_directory == False:
-                    is_input_directory = True
-                    ip_directory_name = argv[i]
-                elif is_output_directory == False:
-                    is_output_directory = True
-                    op_directory_name = argv[i]
-                else:
-                    print("Error in this argument",argv[i])
-                    exit(0)
-            i = i + 1
+                    if is_input_directory == False:
+                        is_input_directory = True
+                        ip_directory_name = argv[i]
+                    elif is_output_directory == False:
+                        is_output_directory = True
+                        op_directory_name = argv[i]
+                    else:
+                        print("Error in this argument",argv[i])
+                        exit(0)
+                i = i + 1
+
         flags, args = commonArgs().getCommonFlagsAndArgs()
 
         flags["is_input_directory"] = is_input_directory
@@ -194,11 +196,30 @@ class enc_flags_and_args:
         args["primaryHeaderMode"] = primaryHeaderMode
         args["fileHeaderMode"] = fileHeaderMode
         #anywhere access arguments or flags via this dictionary now
+
+        #overwrite the values if there
+        if rec_flags is not None:
+            rec_flag_keys = rec_flags.keys()
+            for key in rec_flag_keys:
+                if key in flags.keys():
+                    # maybe put a check before blind assignment 
+                    flags[key] = rec_flags[key]
+                else:
+                    print("Illegal flags key ",key)
+        
+        if rec_args is not None:
+            rec_arg_keys = rec_args.keys()
+            for key in rec_arg_keys:
+                if key in args.keys():
+                    # maybe put a check before blind assignment 
+                    args[key] = rec_args[key]
+                else:
+                    print("Illegal arg key ",key)
         return flags, args
         
             
 class dec_flags_and_args:
-    def getFlagsAndArgs(self,argv):
+    def getFlagsAndArgs(self,argv,rec_flags=None,rec_args=None):
         # default values
         ip_directory_name = "encrypted"
         op_directory_name = "decrypted"
@@ -220,27 +241,29 @@ class dec_flags_and_args:
         is_output_directory = False
         is_debug_mode = False
         #handling the flags to set/overwrite default values
-        i = 1
-        while i < len(argv):
-            if argv[i][0] == "-":
-                flag = argv[i].lstrip("-")
-                if flag == "d":
-                    is_debug_mode = True
-                # add new flags here 
+        if argv is not None:
+            i = 1
+            while i < len(argv):
+                if argv[i][0] == "-":
+                    flag = argv[i].lstrip("-")
+                    if flag == "d":
+                        is_debug_mode = True
+                    # add new flags here 
+                    else:
+                        print("Invalid flag ",flag)
+                        exit(0)
                 else:
-                    print("Invalid flag ",flag)
-                    exit(0)
-            else:
-                if is_input_directory == False:
-                    is_input_directory = True
-                    ip_directory_name = argv[i]
-                elif is_output_directory == False:
-                    is_output_directory = True
-                    op_directory_name = argv[i]
-                else:
-                    print("Error in this argument",argv[i])
-                    exit(0)
-            i = i + 1
+                    if is_input_directory == False:
+                        is_input_directory = True
+                        ip_directory_name = argv[i]
+                    elif is_output_directory == False:
+                        is_output_directory = True
+                        op_directory_name = argv[i]
+                    else:
+                        print("Error in this argument",argv[i])
+                        exit(0)
+                i = i + 1
+
         flags, args = commonArgs().getCommonFlagsAndArgs()
 
         flags["is_input_directory"] = is_input_directory
@@ -255,6 +278,25 @@ class dec_flags_and_args:
         args["encryptMode"] = encryptMode
         args["primaryHeaderMode"] = primaryHeaderMode
         args["fileHeaderMode"] = fileHeaderMode
+
+        #overwrite the values if there
+        if rec_flags is not None:
+            rec_flag_keys = rec_flags.keys()
+            for key in rec_flag_keys:
+                if key in flags.keys():
+                    # maybe put a check before blind assignment 
+                    flags[key] = rec_flags[key]
+                else:
+                    print("Illegal flags key ",key)
+        
+        if rec_args is not None:
+            rec_arg_keys = rec_args.keys()
+            for key in rec_arg_keys:
+                if key in args.keys():
+                    # maybe put a check before blind assignment 
+                    args[key] = rec_args[key]
+                else:
+                    print("Illegal arg key ",key)
 
         return flags, args
 

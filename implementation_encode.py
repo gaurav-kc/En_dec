@@ -223,3 +223,29 @@ class enc_def_behaviour():
         dig = hashlib.sha1(password.encode())
         return dig.digest()
     
+
+class default_encode():
+    def perform_encode(self, flags, args):
+        lib = enc_def_behaviour(flags, args)
+        # get the metainformation like count of files, filenames, from the input folder
+        MetaInformation = lib.getMetaInformation()
+        # get the pipeline code in the byte format 
+        pipelineC = lib.getPipelineBytes()
+        # get the modes cofiguration encoded in bytes 
+        modeCode = lib.getModeBytes()
+        # construct the header for the blob. The header will be appended after encodeMode
+        header = lib.constructHeader(MetaInformation)
+        # try catch can be put here to check if any of them is NoneType
+        header = pipelineC + modeCode + header
+        # create a blob of all files bytearrays appended
+        filesblob = lib.constructFilesBlob(MetaInformation)
+        # combine header and fileblob
+        try:
+            blob = header + filesblob
+        except TypeError:
+            print("No such files found") # in case filesblob turns out to be empty.
+            exit(0)
+        # chunk the blob into desired sized chunks. Break the big blob into pieces
+        chunk_array = lib.chunkBlob(blob)
+        # save all chunks into files
+        lib.saveChunks(chunk_array)

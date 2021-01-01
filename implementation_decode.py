@@ -233,3 +233,27 @@ class dec_def_behaviour():
         # make sure you use same algo while encrpyting
         dig = hashlib.sha1(password.encode())
         return dig.digest()
+
+
+class default_decode():
+    def perform_decode(self, flags, args):
+        # default pipeline
+        fblob, pipeLineCode, index = commonFunctions(flags, args).readPipelineCode()
+        if pipeLineCode != 0:
+            return
+        lib = dec_def_behaviour(flags, args)
+        # set the mode values as per the values in first block
+        index = lib.setArgs(index, fblob)
+        # first identify how many files in the folder we identify as chunks. Get the count 
+        chunkcount = lib.identifyChunks()
+        # constrct the entire blob, combine all the chunks
+        finalBlob = lib.constructBlob(chunkcount)
+        # now that we have full blob, get the header information
+        header, index = lib.decodeHeader(finalBlob, index)
+        # check if password was there
+        lib.checkPassword(header)
+        # get the list of fileInfo objects where each fileinfo object has 2 fields. 1. Fileheader (and the fileheader will have some fields) and 2. file blob
+        filesInfoList, index = lib.getFileInfoList(finalBlob, index, header)
+        # recover all the files. Now we have list of fileinfo objects. Header is required for key while decrpytion.
+        # get a file info. Read header, decrypt blob, decode blob, create and save file.
+        lib.recoverFiles(filesInfoList, header)

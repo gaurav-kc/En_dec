@@ -1,12 +1,11 @@
 # this file is to implement functios which are common. irrespective of mode or any customizations. 
-import os
+from pathlib import Path
 class commonFunctions():
     def __init__(self, flags, args):
         self.flags = flags
         self.args = args
     
     def getEncryptedFilenames(self, chunkcount):
-        # start point for our program
         args = self.args
         chunk_names = []
         for i in range(0, chunkcount):
@@ -19,10 +18,11 @@ class commonFunctions():
         return chunk_names[0]
 
     def readPipelineCode(self):
-        dir_path = os.path.join(self.args["current_dir"],self.args["ip_directory_name"])
+        # start point for our program
+        dir_path = Path(self.args["current_dir"]).joinpath(self.args["ip_directory_name"])
         filename = self.getFirstFileName()
-        filepath = os.path.join(dir_path, filename)
-        if not os.path.exists(filepath):
+        filepath = dir_path.joinpath(filename)
+        if not filepath.exists():
             print(filename, " not found")
             exit(0) # bilkul ricks nai lene ka
         file_obj = open(filepath,"rb")
